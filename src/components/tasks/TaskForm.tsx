@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../../context/AppContext';
-import { X, Calendar, Flag, User, Tag, Clock, Plus } from 'lucide-react';
+import { X, Calendar, Flag, User, Tag, Clock, Plus, RefreshCw } from 'lucide-react';
 import { Task } from '../../types';
 
 interface TaskFormProps {
@@ -31,9 +31,14 @@ const TaskForm: React.FC<TaskFormProps> = ({
   const [selectedClientId, setSelectedClientId] = useState(parentTask?.clientId || preselectedClientId || '');
   const [newTag, setNewTag] = useState('');
   const [tags, setTags] = useState<string[]>(parentTask?.tags || []);
+  
+  // Estados para recorrência
   const [isRecurring, setIsRecurring] = useState(false);
   const [recurrenceType, setRecurrenceType] = useState<'diária' | 'semanal' | 'mensal' | 'anual'>('semanal');
   const [interval, setInterval] = useState(1);
+  const [selectedDays, setSelectedDays] = useState<number[]>([]);
+  const [dayOfMonth, setDayOfMonth] = useState(1);
+  const [monthOfYear, setMonthOfYear] = useState(1);
   
   useEffect(() => {
     if (taskId) {
@@ -47,10 +52,21 @@ const TaskForm: React.FC<TaskFormProps> = ({
         setSelectedListId(task.listId);
         setSelectedClientId(task.clientId || '');
         setTags([...task.tags]);
-        setIsRecurring(!!task.recurrence);
+        
+        // Configurar estados de recorrência
         if (task.recurrence) {
+          setIsRecurring(true);
           setRecurrenceType(task.recurrence.type);
           setInterval(task.recurrence.interval);
+          if (task.recurrence.daysOfWeek) {
+            setSelectedDays(task.recurrence.daysOfWeek);
+          }
+          if (task.recurrence.dayOfMonth) {
+            setDayOfMonth(task.recurrence.dayOfMonth);
+          }
+          if (task.recurrence.monthOfYear) {
+            setMonthOfYear(task.recurrence.monthOfYear);
+          }
         }
       }
     }
@@ -60,6 +76,15 @@ const TaskForm: React.FC<TaskFormProps> = ({
     e.preventDefault();
     
     if (!title.trim()) return;
+
+    const recurrenceData = isRecurring ? {
+      type: recurrenceType,
+      interval,
+      endDate: null,
+      daysOfWeek: recurrenceType === 'semanal' ? selectedDays : undefined,
+      dayOfMonth: recurrenceType === 'mensal' ? dayOfMonth : undefined,
+      monthOfYear: recurrenceType === 'anual' ? monthOfYear : undefined
+    } : null;
 
     if (isSubtask && parentTask) {
       const newSubtask = {
@@ -81,11 +106,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
         clientId: isSubtask ? parentTask?.clientId || null : selectedClientId || null,
         listId: isSubtask ? parentTask?.listId || selectedListId : selectedListId,
         parentId: isSubtask ? parentTask?.id || null : null,
-        recurrence: isRecurring ? {
-          type: recurrenceType,
-          interval,
-          endDate: null,
-        } : null,
+        recurrence: recurrenceData,
         tags: isSubtask ? [...parentTask?.tags || []] : tags,
         subtasks: []
       };
@@ -117,6 +138,22 @@ const TaskForm: React.FC<TaskFormProps> = ({
   const removeTag = (tagToRemove: string) => {
     setTags(tags.filter(tag => tag !== tagToRemove));
   };
+
+  const weekDays = [
+    { value: 0, label: 'Domingo' },
+    { value: 1, label: 'Segunda' },
+    { value: 2, label: 'Terça' },
+    { value: 3, label: 'Quarta' },
+    { value: 4, label: 'Quinta' },
+    { value: 5, label: 'Sexta' },
+    { value: 6, label: 'Sábado' }
+  ];
+
+  const monthDays = Array.from({ length: 31 }, (_, i) => i + 1);
+  const months = [
+    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+  ];
 
   const statusOptions = {
     'em_aberto': 'Em Aberto',
@@ -317,8 +354,8 @@ const TaskForm: React.FC<TaskFormProps> = ({
               </div>
               
               {/* Tarefa recorrente */}
-              <div className="mt-6">
-                <div className="flex items-center mb-4">
+              <div className="space-y-4">
+                <div className="flex items-center">
                   <input
                     id="recurring"
                     type="checkbox"
@@ -326,7 +363,8 @@ const TaskForm: React.FC<TaskFormProps> = ({
                     checked={isRecurring}
                     onChange={() => setIsRecurring(!isRecurring)}
                   />
-                  <label htmlFor="recurring" className="ml-2 block text-sm text-gray-700">
+                  <label htmlFor="recurring" className="ml-2 flex items-center text-sm text-gray-700">
+                    <RefreshCw size={16} className="mr-2" />
                     Tarefa recorrente
                   </label>
                 </div>
@@ -350,6 +388,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
                           <option value="anual">Anual</option>
                         </select>
                       </div>
+                      
                       <div>
                         <label htmlFor="interval" className="block text-sm font-medium text-gray-700 mb-2">
                           A cada
@@ -359,7 +398,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
                             id="interval"
                             type="number"
                             min="1"
-                            className="w-full px-4 py-3 rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                            className="w-24 px-4 py-3 rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                             value={interval}
                             onChange={(e) => setInterval(parseInt(e.target.value) || 1)}
                           />
@@ -372,6 +411,90 @@ const TaskForm: React.FC<TaskFormProps> = ({
                         </div>
                       </div>
                     </div>
+
+                    {/* Opções específicas para cada tipo de recorrência */}
+                    {recurrenceType === 'semanal' && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Dias da semana
+                        </label>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                          {weekDays.map(day => (
+                            <label key={day.value} className="flex items-center space-x-2">
+                              <input
+                                type="checkbox"
+                                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                checked={selectedDays.includes(day.value)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSelectedDays([...selectedDays, day.value]);
+                                  } else {
+                                    setSelectedDays(selectedDays.filter(d => d !== day.value));
+                                  }
+                                }}
+                              />
+                              <span className="text-sm text-gray-700">{day.label}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {recurrenceType === 'mensal' && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Dia do mês
+                        </label>
+                        <select
+                          className="w-full px-4 py-3 rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                          value={dayOfMonth}
+                          onChange={(e) => setDayOfMonth(parseInt(e.target.value))}
+                        >
+                          {monthDays.map(day => (
+                            <option key={day} value={day}>
+                              Dia {day}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+
+                    {recurrenceType === 'anual' && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Mês
+                          </label>
+                          <select
+                            className="w-full px-4 py-3 rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                            value={monthOfYear}
+                            onChange={(e) => setMonthOfYear(parseInt(e.target.value))}
+                          >
+                            {months.map((month, index) => (
+                              <option key={index + 1} value={index + 1}>
+                                {month}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Dia
+                          </label>
+                          <select
+                            className="w-full px-4 py-3 rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                            value={dayOfMonth}
+                            onChange={(e) => setDayOfMonth(parseInt(e.target.value))}
+                          >
+                            {monthDays.map(day => (
+                              <option key={day} value={day}>
+                                Dia {day}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

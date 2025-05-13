@@ -16,11 +16,13 @@ import {
   Bell,
   ListPlus,
   CheckCircle2,
-  ChevronRight
+  ChevronRight,
+  RefreshCw
 } from 'lucide-react';
 import { formatDate, formatDateRelative } from '../../utils/dateUtils';
 import TaskStatusTimer from './TaskStatusTimer';
 import TaskObservations from './TaskObservations';
+import TaskReminders from './TaskReminders';
 import TaskModal from './TaskModal';
 import TaskForm from './TaskForm';
 import DeleteConfirmationModal from '../common/DeleteConfirmationModal';
@@ -64,6 +66,37 @@ const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
     'em_andamento': 'Em Andamento',
     'concluido': 'Concluído',
     'nao_feito': 'Não Feito'
+  };
+
+  const formatRecurrence = (task: Task) => {
+    if (!task.recurrence) return null;
+    
+    const { type, interval } = task.recurrence;
+    let text = `A cada ${interval} `;
+    
+    switch (type) {
+      case 'diária':
+        text += interval === 1 ? 'dia' : 'dias';
+        break;
+      case 'semanal':
+        text += interval === 1 ? 'semana' : 'semanas';
+        if (task.recurrence.daysOfWeek?.length) {
+          const dias = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
+          text += ` (${task.recurrence.daysOfWeek.map(d => dias[d]).join(', ')})`;
+        }
+        break;
+      case 'mensal':
+        text += interval === 1 ? 'mês' : 'meses';
+        if (task.recurrence.dayOfMonth) {
+          text += ` (dia ${task.recurrence.dayOfMonth})`;
+        }
+        break;
+      case 'anual':
+        text += interval === 1 ? 'ano' : 'anos';
+        break;
+    }
+    
+    return text;
   };
 
   const handleStatusChange = (newStatus: 'concluido' | 'nao_feito') => {
@@ -187,6 +220,14 @@ const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
                     <span className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-purple-100 text-purple-700">
                       <Calendar size={14} className="mr-1.5" />
                       {formatDate(task.dueDate)}
+                    </span>
+                  )}
+
+                  {/* Recorrência */}
+                  {task.recurrence && (
+                    <span className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-indigo-100 text-indigo-700">
+                      <RefreshCw size={14} className="mr-1.5" />
+                      {formatRecurrence(task)}
                     </span>
                   )}
 
