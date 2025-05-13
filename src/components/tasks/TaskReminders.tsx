@@ -5,16 +5,16 @@ import { Bell, Plus, Trash, X } from 'lucide-react';
 
 interface TaskRemindersProps {
   task: Task;
-  onClose?: () => void;
 }
 
-const TaskReminders: React.FC<TaskRemindersProps> = ({ task, onClose }) => {
+const TaskReminders: React.FC<TaskRemindersProps> = ({ task }) => {
   const { addReminder, updateTask } = useAppContext();
   const [time, setTime] = useState<number>(15);
   const [unit, setUnit] = useState<'minutos' | 'horas' | 'dias'>('minutos');
   const [showAddForm, setShowAddForm] = useState(false);
 
   const handleAddReminder = () => {
+    if (time <= 0) return;
     addReminder(task.id, time, unit);
     setShowAddForm(false);
   };
@@ -27,27 +27,34 @@ const TaskReminders: React.FC<TaskRemindersProps> = ({ task, onClose }) => {
 
   return (
     <div className="space-y-4">
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="text-lg font-medium text-gray-900">Lembretes</h3>
+        <div className="text-sm text-gray-500">
+          {task.reminders?.length || 0} lembretes
+        </div>
+      </div>
+
       {!showAddForm ? (
         <button
           onClick={() => setShowAddForm(true)}
-          className="w-full flex items-center justify-center px-4 py-2 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-gray-400 hover:text-gray-700 transition-colors"
+          className="w-full flex items-center justify-center px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-gray-400 hover:text-gray-700 transition-colors"
         >
           <Plus size={18} className="mr-2" />
           Adicionar Novo Lembrete
         </button>
       ) : (
-        <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+        <div className="bg-gray-50 rounded-lg p-4 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-medium text-gray-700">Novo Lembrete</h3>
+            <h4 className="text-sm font-medium text-gray-700">Novo Lembrete</h4>
             <button
               onClick={() => setShowAddForm(false)}
-              className="text-gray-400 hover:text-gray-600"
+              className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100"
             >
               <X size={18} />
             </button>
           </div>
           
-          <div className="flex gap-2">
+          <div className="flex gap-3">
             <input
               type="number"
               min="1"
@@ -66,7 +73,7 @@ const TaskReminders: React.FC<TaskRemindersProps> = ({ task, onClose }) => {
             </select>
             <button
               onClick={handleAddReminder}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center"
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center ml-auto"
             >
               <Plus size={16} className="mr-2" />
               Adicionar
@@ -75,11 +82,11 @@ const TaskReminders: React.FC<TaskRemindersProps> = ({ task, onClose }) => {
         </div>
       )}
 
-      <div className="space-y-2">
+      <div className="space-y-3 mt-4">
         {task.reminders?.map((reminder: Reminder) => (
           <div
             key={reminder.id}
-            className="flex items-center justify-between bg-white rounded-lg p-4 border border-gray-200"
+            className="flex items-center justify-between bg-white rounded-lg p-4 border border-gray-200 group hover:border-gray-300 transition-colors"
           >
             <div className="flex items-center space-x-3">
               <div className="p-2 bg-indigo-100 text-indigo-600 rounded-full">
@@ -91,24 +98,13 @@ const TaskReminders: React.FC<TaskRemindersProps> = ({ task, onClose }) => {
             </div>
             <button
               onClick={() => handleRemoveReminder(reminder.id)}
-              className="p-1 text-gray-400 hover:text-red-500 rounded-full hover:bg-gray-100"
+              className="p-1.5 text-gray-400 hover:text-red-500 rounded-full hover:bg-gray-100 opacity-0 group-hover:opacity-100 transition-opacity"
             >
               <Trash size={16} />
             </button>
           </div>
         ))}
       </div>
-
-      {onClose && (
-        <div className="mt-6 flex justify-end">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
-          >
-            Fechar
-          </button>
-        </div>
-      )}
     </div>
   );
 };
