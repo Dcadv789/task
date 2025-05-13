@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { Task, Observation } from '../../types';
 import { MessageSquarePlus, User, Clock, Trash } from 'lucide-react';
@@ -6,11 +6,24 @@ import { formatDateRelative } from '../../utils/dateUtils';
 
 interface TaskObservationsProps {
   task: Task;
+  onClose: () => void;
 }
 
-const TaskObservations: React.FC<TaskObservationsProps> = ({ task }) => {
+const TaskObservations: React.FC<TaskObservationsProps> = ({ task, onClose }) => {
   const { addObservation, updateTask, currentUser } = useAppContext();
   const [newObservation, setNewObservation] = useState('');
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
+        onClose();
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [onClose]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,7 +40,7 @@ const TaskObservations: React.FC<TaskObservationsProps> = ({ task }) => {
   };
 
   return (
-    <div className="space-y-4">
+    <div ref={modalRef} className="space-y-4">
       <div className="flex items-center justify-between mb-2">
         <h3 className="text-lg font-medium text-gray-900">Observações</h3>
         <div className="text-sm text-gray-500">
@@ -83,4 +96,4 @@ const TaskObservations: React.FC<TaskObservationsProps> = ({ task }) => {
   );
 };
 
-export default TaskObservations
+export default TaskObservations;

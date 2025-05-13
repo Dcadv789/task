@@ -23,7 +23,8 @@ import TaskStatusTimer from './TaskStatusTimer';
 import TaskObservations from './TaskObservations';
 import TaskModal from './TaskModal';
 import TaskForm from './TaskForm';
-import TaskReminders from './TaskReminders';
+import DeleteConfirmationModal from '../common/DeleteConfirmationModal';
+import Notification from '../common/Notification';
 
 interface TaskCardProps {
   task: Task;
@@ -36,6 +37,11 @@ const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
   const [showObservationsModal, setShowObservationsModal] = useState(false);
   const [showAddSubtaskModal, setShowAddSubtaskModal] = useState(false);
   const [showSubtasks, setShowSubtasks] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [notification, setNotification] = useState<{
+    type: 'success' | 'error';
+    message: string;
+  } | null>(null);
 
   const list = lists.find(l => l.id === task.listId);
   const taskClients = clients.filter(c => task.clientIds.includes(c.id));
@@ -80,6 +86,22 @@ const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
   const handleDeleteSubtask = (subtaskId: string) => {
     const updatedSubtasks = task.subtasks?.filter(subtask => subtask.id !== subtaskId);
     updateTask(task.id, { subtasks: updatedSubtasks });
+  };
+
+  const handleDeleteConfirm = () => {
+    try {
+      deleteTask(task.id);
+      setShowDeleteModal(false);
+      setNotification({
+        type: 'success',
+        message: 'Tarefa excluída com sucesso!'
+      });
+    } catch (error) {
+      setNotification({
+        type: 'error',
+        message: 'Erro ao excluir a tarefa. Tente novamente.'
+      });
+    }
   };
 
   return (
@@ -284,7 +306,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
                 <Edit size={18} />
               </button>
               <button
-                onClick={() => deleteTask(task.id)}
+                onClick={() => setShowDeleteModal(true)}
                 className="p-2 text-gray-400 hover:text-red-600 hover:bg-gray-100 rounded-full"
                 title="Excluir"
               >
@@ -359,8 +381,8 @@ const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
               </h2>
             </div>
             <div className="p-6 space-y-6">
-              <TaskObservations task={task} />
-              <TaskReminders task={task} />
+              <TaskObservations task={task} onClose={() => setShowObservationsModal(false)} />
+              <TaskReminders task={task} onClose={() => setShowObservationsModal(false)} />
             </div>
             <div className="p-4 border-t border-gray-200 flex justify-end">
               <button
@@ -385,6 +407,24 @@ const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
             />
           </div>
         </div>
+      )}
+
+      {/* Modal de confirmação de exclusão */}
+      <DeleteConfirmationModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={handleDeleteConfirm}
+        title="Excluir Tarefa"
+        message="Tem certeza que deseja excluir esta tarefa? Esta ação não pode ser desfeita."
+      />
+
+      {/* Notificação */}
+      {notification && (
+        <Notification
+          type={notification.type}
+          message={notification.message}
+          onClose={() => setNotification(null)}
+        />
       )}
     </>
   );

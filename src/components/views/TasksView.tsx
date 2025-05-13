@@ -14,6 +14,7 @@ import {
   Calendar
 } from 'lucide-react';
 import TaskForm from '../tasks/TaskForm';
+import TaskModal from '../tasks/TaskModal';
 
 export const TasksView: React.FC = () => {
   const { 
@@ -25,7 +26,7 @@ export const TasksView: React.FC = () => {
     searchQuery
   } = useAppContext();
   
-  const [isCreating, setIsCreating] = useState(false);
+  const [showNewTaskModal, setShowNewTaskModal] = useState(false);
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [filterOptions, setFilterOptions] = useState({
@@ -169,7 +170,6 @@ export const TasksView: React.FC = () => {
         </div>
         
         <div className="flex space-x-2">
-          {/* Alternar visualização */}
           <div className="flex border border-gray-200 rounded-lg overflow-hidden">
             <button 
               className={`p-2 ${viewMode === 'list' ? 'bg-blue-50 text-blue-600' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
@@ -187,10 +187,9 @@ export const TasksView: React.FC = () => {
             </button>
           </div>
           
-          {/* Botão Nova Tarefa */}
           <button 
             className="flex items-center px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
-            onClick={() => setIsCreating(true)}
+            onClick={() => setShowNewTaskModal(true)}
           >
             <Plus size={18} className="mr-1" />
             <span>Nova Tarefa</span>
@@ -378,24 +377,22 @@ export const TasksView: React.FC = () => {
           </div>
         </div>
       </div>
-      
-      {isCreating && (
-        <div className="mb-6">
-          <TaskForm 
-            onClose={() => setIsCreating(false)} 
-            preselectedListId={selectedListId}
-            preselectedClientId={selectedClientId}
-          />
-        </div>
+
+      {showNewTaskModal && (
+        <TaskModal
+          isOpen={showNewTaskModal}
+          onClose={() => setShowNewTaskModal(false)}
+          preselectedListId={selectedListId || undefined}
+          preselectedClientIds={selectedClientId ? [selectedClientId] : undefined}
+        />
       )}
 
       {editingTaskId && (
-        <div className="mb-6">
-          <TaskForm 
-            taskId={editingTaskId}
-            onClose={() => setEditingTaskId(null)}
-          />
-        </div>
+        <TaskModal
+          isOpen={true}
+          task={tasks.find(t => t.id === editingTaskId)}
+          onClose={() => setEditingTaskId(null)}
+        />
       )}
       
       {sortedTasks.length === 0 ? (
@@ -410,7 +407,7 @@ export const TasksView: React.FC = () => {
           </p>
           <button 
             className="flex items-center px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
-            onClick={() => setIsCreating(true)}
+            onClick={() => setShowNewTaskModal(true)}
           >
             <Plus size={18} className="mr-1" />
             <span>Nova Tarefa</span>

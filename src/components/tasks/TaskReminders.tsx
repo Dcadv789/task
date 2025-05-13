@@ -1,17 +1,30 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { Task, Reminder } from '../../types';
 import { Bell, Plus, Trash, X } from 'lucide-react';
 
 interface TaskRemindersProps {
   task: Task;
+  onClose: () => void;
 }
 
-const TaskReminders: React.FC<TaskRemindersProps> = ({ task }) => {
+const TaskReminders: React.FC<TaskRemindersProps> = ({ task, onClose }) => {
   const { addReminder, updateTask } = useAppContext();
   const [time, setTime] = useState<number>(15);
   const [unit, setUnit] = useState<'minutos' | 'horas' | 'dias'>('minutos');
   const [showAddForm, setShowAddForm] = useState(false);
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
+        onClose();
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [onClose]);
 
   const handleAddReminder = () => {
     if (time <= 0) return;
@@ -26,7 +39,7 @@ const TaskReminders: React.FC<TaskRemindersProps> = ({ task }) => {
   };
 
   return (
-    <div className="space-y-4">
+    <div ref={modalRef} className="space-y-4">
       <div className="flex items-center justify-between mb-2">
         <h3 className="text-lg font-medium text-gray-900">Lembretes</h3>
         <div className="text-sm text-gray-500">
