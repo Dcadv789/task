@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { Task, Observation } from '../../types';
-import { MessageSquarePlus, User, Clock, Trash, X } from 'lucide-react';
+import { MessageSquarePlus, User, Clock, Trash } from 'lucide-react';
 import { formatDateRelative } from '../../utils/dateUtils';
 
 interface TaskObservationsProps {
@@ -42,7 +42,7 @@ const TaskObservations: React.FC<TaskObservationsProps> = ({ task }) => {
             value={newObservation}
             onChange={(e) => setNewObservation(e.target.value)}
             placeholder="Adicionar uma observação..."
-            className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2"
           />
           <button
             type="submit"
@@ -83,4 +83,4 @@ const TaskObservations: React.FC<TaskObservationsProps> = ({ task }) => {
   );
 };
 
-export default TaskObservations;
+export default TaskObservations

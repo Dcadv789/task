@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { Task } from '../../types';
 import { 
-  CheckSquare, 
+  Circle,
   Clock, 
   Calendar, 
   Flag,
@@ -14,7 +14,8 @@ import {
   Edit,
   MessageSquare,
   Bell,
-  ListPlus
+  ListPlus,
+  CheckCircle2
 } from 'lucide-react';
 import { formatDate, formatDateRelative } from '../../utils/dateUtils';
 import TaskStatusTimer from './TaskStatusTimer';
@@ -64,6 +65,16 @@ const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
     });
   };
 
+  const handleSubtaskStatusChange = (subtaskId: string, completed: boolean) => {
+    const updatedSubtasks = task.subtasks?.map(subtask => 
+      subtask.id === subtaskId 
+        ? { ...subtask, completed }
+        : subtask
+    );
+    
+    updateTask(task.id, { subtasks: updatedSubtasks });
+  };
+
   return (
     <>
       <div className={`bg-white rounded-lg shadow-sm border overflow-hidden transition-all duration-200 mb-4 ${
@@ -82,7 +93,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
                     : 'text-gray-400 hover:bg-gray-50'
                 }`}
               >
-                <CheckSquare size={22} />
+                {task.status === 'concluido' ? <CheckCircle2 size={22} /> : <Circle size={22} />}
               </button>
               
               <div className="space-y-3">
@@ -113,12 +124,12 @@ const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
                       {task.subtasks.map(subtask => (
                         <div key={subtask.id} className="flex items-center space-x-2 pl-4 text-sm">
                           <button
-                            onClick={() => handleStatusChange(subtask.completed ? 'em_aberto' : 'concluido')}
+                            onClick={() => handleSubtaskStatusChange(subtask.id, !subtask.completed)}
                             className={`p-1 rounded-md ${
                               subtask.completed ? 'text-green-500' : 'text-gray-400'
                             }`}
                           >
-                            <CheckSquare size={16} />
+                            {subtask.completed ? <CheckCircle2 size={16} /> : <Circle size={16} />}
                           </button>
                           <span className={subtask.completed ? 'line-through text-gray-400' : 'text-gray-600'}>
                             {subtask.title}
@@ -161,6 +172,14 @@ const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
                       style={{ backgroundColor: `${list.color}20`, color: list.color }}
                     >
                       {list.name}
+                    </span>
+                  )}
+
+                  {/* Badge de Observações */}
+                  {task.observations && task.observations.length > 0 && (
+                    <span className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-gray-100 text-gray-700">
+                      <MessageSquare size={14} className="mr-1.5" />
+                      {task.observations.length} {task.observations.length === 1 ? 'observação' : 'observações'}
                     </span>
                   )}
 
@@ -255,7 +274,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
                 <div className="space-y-3">
                   <h4 className="text-sm font-medium text-gray-700">Observações</h4>
                   {task.observations.map(obs => (
-                    <div key={obs.id} className="bg-gray-50 rounded-lg p-3">
+                    <div key={obs.id} className="bg-gray-50 rounded-lg p-4">
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-600">{obs.content}</span>
                         <span className="text-gray-400">{formatDateRelative(obs.createdAt)}</span>
@@ -270,7 +289,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
                 <div className="space-y-3">
                   <h4 className="text-sm font-medium text-gray-700">Lembretes</h4>
                   {task.reminders.map(reminder => (
-                    <div key={reminder.id} className="bg-gray-50 rounded-lg p-3">
+                    <div key={reminder.id} className="bg-gray-50 rounded-lg p-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center text-sm text-gray-600">
                           <Bell size={14} className="mr-2 text-indigo-500" />
