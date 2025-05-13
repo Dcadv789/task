@@ -10,7 +10,8 @@ import {
   ClipboardList,
   LayoutGrid,
   LayoutList,
-  X
+  X,
+  Calendar
 } from 'lucide-react';
 import TaskForm from '../tasks/TaskForm';
 
@@ -25,6 +26,7 @@ export const TasksView: React.FC = () => {
   } = useAppContext();
   
   const [isCreating, setIsCreating] = useState(false);
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [filterOptions, setFilterOptions] = useState({
     showCompleted: true,
@@ -32,7 +34,9 @@ export const TasksView: React.FC = () => {
     status: 'todas' as 'todas' | 'em_aberto' | 'em_andamento' | 'concluido' | 'nao_feito',
     clientId: 'todos' as string | 'todos',
     listId: 'todas' as string | 'todas',
-    sortBy: 'dueDate' as 'dueDate' | 'priority' | 'createdAt'
+    sortBy: 'dueDate' as 'dueDate' | 'priority' | 'createdAt',
+    date: '' as string,
+    dateRange: '' as '' | 'hoje' | 'semana' | 'mes'
   });
   
   // Filtrar tarefas
@@ -57,6 +61,52 @@ export const TasksView: React.FC = () => {
     
     // Filtrar por prioridade
     if (filterOptions.priority !== 'todas' && task.priority !== filterOptions.priority) return false;
+    
+    // Filtrar por data específica
+    if (filterOptions.date && task.dueDate) {
+      const taskDate = new Date(task.dueDate);
+      const filterDate = new Date(filterOptions.date);
+      if (
+        taskDate.getFullYear() !== filterDate.getFullYear() ||
+        taskDate.getMonth() !== filterDate.getMonth() ||
+        taskDate.getDate() !== filterDate.getDate()
+      ) {
+        return false;
+      }
+    }
+
+    // Filtrar por intervalo de data
+    if (filterOptions.dateRange && task.dueDate) {
+      const taskDate = new Date(task.dueDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      if (filterOptions.dateRange === 'hoje') {
+        if (
+          taskDate.getFullYear() !== today.getFullYear() ||
+          taskDate.getMonth() !== today.getMonth() ||
+          taskDate.getDate() !== today.getDate()
+        ) {
+          return false;
+        }
+      } else if (filterOptions.dateRange === 'semana') {
+        const weekStart = new Date(today);
+        weekStart.setDate(today.getDate() - today.getDay());
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekStart.getDate() + 6);
+        
+        if (taskDate < weekStart || taskDate > weekEnd) {
+          return false;
+        }
+      } else if (filterOptions.dateRange === 'mes') {
+        if (
+          taskDate.getFullYear() !== today.getFullYear() ||
+          taskDate.getMonth() !== today.getMonth()
+        ) {
+          return false;
+        }
+      }
+    }
     
     // Filtrar por busca
     if (searchQuery && !task.title.toLowerCase().includes(searchQuery.toLowerCase()) && 
@@ -98,6 +148,14 @@ export const TasksView: React.FC = () => {
     'em_andamento': 'Em Andamento',
     'concluido': 'Concluído',
     'nao_feito': 'Não Feito'
+  };
+
+  const handleDateRangeClick = (range: '' | 'hoje' | 'semana' | 'mes') => {
+    setFilterOptions(prev => ({
+      ...prev,
+      dateRange: prev.dateRange === range ? '' : range,
+      date: '' // Limpa a data específica quando seleciona um intervalo
+    }));
   };
   
   return (
@@ -223,48 +281,101 @@ export const TasksView: React.FC = () => {
           </div>
         </div>
 
-        <div className="mt-6 flex items-center justify-between">
-          <div className="flex items-center space-x-6">
-            <label className="flex items-center text-sm text-gray-600">
-              <input 
-                type="checkbox" 
-                className="mr-2 h-4 w-4 rounded border-gray-300"
-                checked={filterOptions.showCompleted}
-                onChange={() => setFilterOptions({
+        {/* Filtros de Data */}
+        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700">
+              Data Específica
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="date"
+                className="flex-1 rounded-md border-gray-200 text-sm focus:border-blue-500 focus:ring-blue-500"
+                value={filterOptions.date}
+                onChange={(e) => setFilterOptions({
                   ...filterOptions,
-                  showCompleted: !filterOptions.showCompleted
+                  date: e.target.value,
+                  dateRange: '' // Limpa o intervalo quando seleciona uma data específica
                 })}
               />
-              Mostrar tarefas concluídas
-            </label>
-
-            <select
-              className="rounded-md border-gray-200 text-sm focus:border-blue-500 focus:ring-blue-500"
-              value={filterOptions.sortBy}
-              onChange={(e) => setFilterOptions({
-                ...filterOptions,
-                sortBy: e.target.value as any
-              })}
-            >
-              <option value="dueDate">Ordenar por data</option>
-              <option value="priority">Ordenar por prioridade</option>
-              <option value="createdAt">Ordenar por criação</option>
-            </select>
+              <button
+                className={`px-3 py-2 rounded-md text-sm font-medium ${
+                  filterOptions.dateRange === 'hoje'
+                    ? 'bg-blue-50 text-blue-600 border-blue-200'
+                    : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+                } border`}
+                onClick={() => handleDateRangeClick('hoje')}
+              >
+                Hoje
+              </button>
+              <button
+                className={`px-3 py-2 rounded-md text-sm font-medium ${
+                  filterOptions.dateRange === 'semana'
+                    ? 'bg-blue-50 text-blue-600 border-blue-200'
+                    : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+                } border`}
+                onClick={() => handleDateRangeClick('semana')}
+              >
+                Esta Semana
+              </button>
+              <button
+                className={`px-3 py-2 rounded-md text-sm font-medium ${
+                  filterOptions.dateRange === 'mes'
+                    ? 'bg-blue-50 text-blue-600 border-blue-200'
+                    : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+                } border`}
+                onClick={() => handleDateRangeClick('mes')}
+              >
+                Este Mês
+              </button>
+            </div>
           </div>
 
-          <button
-            className="text-sm text-blue-600 hover:text-blue-800"
-            onClick={() => setFilterOptions({
-              showCompleted: true,
-              priority: 'todas',
-              status: 'todas',
-              clientId: 'todos',
-              listId: 'todas',
-              sortBy: 'dueDate'
-            })}
-          >
-            Limpar filtros
-          </button>
+          <div className="flex items-end justify-between">
+            <div className="flex items-center space-x-6">
+              <label className="flex items-center text-sm text-gray-600">
+                <input 
+                  type="checkbox" 
+                  className="mr-2 h-4 w-4 rounded border-gray-300"
+                  checked={filterOptions.showCompleted}
+                  onChange={() => setFilterOptions({
+                    ...filterOptions,
+                    showCompleted: !filterOptions.showCompleted
+                  })}
+                />
+                Mostrar tarefas concluídas
+              </label>
+
+              <select
+                className="rounded-md border-gray-200 text-sm focus:border-blue-500 focus:ring-blue-500"
+                value={filterOptions.sortBy}
+                onChange={(e) => setFilterOptions({
+                  ...filterOptions,
+                  sortBy: e.target.value as any
+                })}
+              >
+                <option value="dueDate">Ordenar por data</option>
+                <option value="priority">Ordenar por prioridade</option>
+                <option value="createdAt">Ordenar por criação</option>
+              </select>
+            </div>
+
+            <button
+              className="text-sm text-blue-600 hover:text-blue-800"
+              onClick={() => setFilterOptions({
+                showCompleted: true,
+                priority: 'todas',
+                status: 'todas',
+                clientId: 'todos',
+                listId: 'todas',
+                sortBy: 'dueDate',
+                date: '',
+                dateRange: ''
+              })}
+            >
+              Limpar filtros
+            </button>
+          </div>
         </div>
       </div>
       
@@ -274,6 +385,15 @@ export const TasksView: React.FC = () => {
             onClose={() => setIsCreating(false)} 
             preselectedListId={selectedListId}
             preselectedClientId={selectedClientId}
+          />
+        </div>
+      )}
+
+      {editingTaskId && (
+        <div className="mb-6">
+          <TaskForm 
+            taskId={editingTaskId}
+            onClose={() => setEditingTaskId(null)}
           />
         </div>
       )}
@@ -301,7 +421,11 @@ export const TasksView: React.FC = () => {
           viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4' : ''
         }`}>
           {sortedTasks.map((task: Task) => (
-            <TaskCard key={task.id} task={task} />
+            <TaskCard 
+              key={task.id} 
+              task={task} 
+              onEdit={() => setEditingTaskId(task.id)}
+            />
           ))}
         </div>
       )}

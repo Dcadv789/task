@@ -4,6 +4,7 @@ import { X, Calendar, Flag, User, Tag, Clock, Plus } from 'lucide-react';
 import { Task } from '../../types';
 
 interface TaskFormProps {
+  taskId?: string;
   onClose: () => void;
   preselectedListId?: string | null;
   preselectedClientId?: string | null;
@@ -12,13 +13,14 @@ interface TaskFormProps {
 }
 
 const TaskForm: React.FC<TaskFormProps> = ({ 
+  taskId,
   onClose, 
   preselectedListId, 
   preselectedClientId,
   isSubtask = false,
   parentTask
 }) => {
-  const { lists, clients, addTask } = useAppContext();
+  const { lists, clients, addTask, tasks, updateTask } = useAppContext();
   
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -34,20 +36,32 @@ const TaskForm: React.FC<TaskFormProps> = ({
   const [interval, setInterval] = useState(1);
   
   useEffect(() => {
-    if (parentTask) {
-      setSelectedListId(parentTask.listId);
-      setSelectedClientId(parentTask.clientId || '');
-      setPriority(parentTask.priority);
-      setTags([...parentTask.tags]);
+    if (taskId) {
+      const task = tasks.find(t => t.id === taskId);
+      if (task) {
+        setTitle(task.title);
+        setDescription(task.description);
+        setDueDate(task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : '');
+        setPriority(task.priority);
+        setStatus(task.status);
+        setSelectedListId(task.listId);
+        setSelectedClientId(task.clientId || '');
+        setTags([...task.tags]);
+        setIsRecurring(!!task.recurrence);
+        if (task.recurrence) {
+          setRecurrenceType(task.recurrence.type);
+          setInterval(task.recurrence.interval);
+        }
+      }
     }
-  }, [parentTask]);
+  }, [taskId, tasks]);
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!title.trim()) return;
     
-    addTask({
+    const taskData = {
       title,
       description,
       completed: status === 'concluido',
@@ -63,7 +77,13 @@ const TaskForm: React.FC<TaskFormProps> = ({
         endDate: null,
       } : null,
       tags: isSubtask ? [...parentTask?.tags || []] : tags
-    });
+    };
+
+    if (taskId) {
+      updateTask(taskId, taskData);
+    } else {
+      addTask(taskData);
+    }
     
     onClose();
   };
@@ -97,7 +117,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
     <div className="bg-white border rounded-lg shadow-sm">
       <div className="p-4 border-b border-gray-200 flex justify-between items-center">
         <h2 className="text-lg font-medium text-gray-800">
-          {isSubtask ? 'Nova Subtarefa' : 'Nova Tarefa'}
+          {taskId ? 'Editar Tarefa' : isSubtask ? 'Nova Subtarefa' : 'Nova Tarefa'}
         </h2>
         <button
           className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100"
@@ -362,7 +382,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
               type="submit"
               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
             >
-              {isSubtask ? 'Criar Subtarefa' : 'Criar Tarefa'}
+              {taskId ? 'Salvar Alterações' : isSubtask ? 'Criar Subtarefa' : 'Criar Tarefa'}
             </button>
           </div>
         </div>

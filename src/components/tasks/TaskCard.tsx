@@ -22,9 +22,10 @@ import TaskForm from './TaskForm';
 interface TaskCardProps {
   task: Task;
   showSubtasks?: boolean;
+  onEdit?: () => void;
 }
 
-const TaskCard: React.FC<TaskCardProps> = ({ task, showSubtasks = true }) => {
+const TaskCard: React.FC<TaskCardProps> = ({ task, showSubtasks = true, onEdit }) => {
   const { 
     toggleTaskCompletion, 
     deleteTask, 
@@ -114,6 +115,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, showSubtasks = true }) => {
                 <button 
                   className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
                   aria-label="Editar tarefa"
+                  onClick={onEdit}
                 >
                   <Edit size={16} />
                 </button>
