@@ -1,34 +1,46 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { X, Calendar, Flag, User, Tag, Clock, Plus } from 'lucide-react';
+import { Task } from '../../types';
 
 interface TaskFormProps {
   onClose: () => void;
   preselectedListId?: string | null;
   preselectedClientId?: string | null;
   isSubtask?: boolean;
+  parentTask?: Task;
 }
 
 const TaskForm: React.FC<TaskFormProps> = ({ 
   onClose, 
   preselectedListId, 
   preselectedClientId,
-  isSubtask = false
+  isSubtask = false,
+  parentTask
 }) => {
   const { lists, clients, addTask } = useAppContext();
   
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [dueDate, setDueDate] = useState('');
-  const [priority, setPriority] = useState<'baixa' | 'média' | 'alta'>('média');
+  const [priority, setPriority] = useState<'baixa' | 'média' | 'alta'>(parentTask?.priority || 'média');
   const [status, setStatus] = useState<'em_aberto' | 'em_andamento' | 'concluido' | 'nao_feito'>('em_aberto');
-  const [selectedListId, setSelectedListId] = useState(preselectedListId || lists[0]?.id || '');
-  const [selectedClientId, setSelectedClientId] = useState(preselectedClientId || '');
+  const [selectedListId, setSelectedListId] = useState(parentTask?.listId || preselectedListId || lists[0]?.id || '');
+  const [selectedClientId, setSelectedClientId] = useState(parentTask?.clientId || preselectedClientId || '');
   const [newTag, setNewTag] = useState('');
-  const [tags, setTags] = useState<string[]>([]);
+  const [tags, setTags] = useState<string[]>(parentTask?.tags || []);
   const [isRecurring, setIsRecurring] = useState(false);
   const [recurrenceType, setRecurrenceType] = useState<'diária' | 'semanal' | 'mensal' | 'anual'>('semanal');
   const [interval, setInterval] = useState(1);
+  
+  useEffect(() => {
+    if (parentTask) {
+      setSelectedListId(parentTask.listId);
+      setSelectedClientId(parentTask.clientId || '');
+      setPriority(parentTask.priority);
+      setTags([...parentTask.tags]);
+    }
+  }, [parentTask]);
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,18 +51,18 @@ const TaskForm: React.FC<TaskFormProps> = ({
       title,
       description,
       completed: status === 'concluido',
-      priority,
+      priority: isSubtask ? parentTask?.priority || priority : priority,
       status,
       dueDate: dueDate ? new Date(dueDate).toISOString() : null,
-      clientId: selectedClientId || null,
-      listId: selectedListId,
-      parentId: null,
+      clientId: isSubtask ? parentTask?.clientId || null : selectedClientId || null,
+      listId: isSubtask ? parentTask?.listId || selectedListId : selectedListId,
+      parentId: isSubtask ? parentTask?.id || null : null,
       recurrence: isRecurring ? {
         type: recurrenceType,
         interval,
         endDate: null,
       } : null,
-      tags
+      tags: isSubtask ? [...parentTask?.tags || []] : tags
     });
     
     onClose();
@@ -129,8 +141,8 @@ const TaskForm: React.FC<TaskFormProps> = ({
             />
           </div>
           
-          {/* Linha 1: Data, Prioridade e Status */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Linha 1: Data e Status */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Data de vencimento */}
             <div>
               <label htmlFor="dueDate" className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
@@ -146,24 +158,6 @@ const TaskForm: React.FC<TaskFormProps> = ({
               />
             </div>
             
-            {/* Prioridade */}
-            <div>
-              <label htmlFor="priority" className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                <Flag size={14} className="mr-1" />
-                Prioridade
-              </label>
-              <select
-                id="priority"
-                className="w-full rounded-md border-gray-200 focus:border-blue-500 focus:ring-blue-500"
-                value={priority}
-                onChange={(e) => setPriority(e.target.value as 'baixa' | 'média' | 'alta')}
-              >
-                <option value="baixa">Baixa</option>
-                <option value="média">Média</option>
-                <option value="alta">Alta</option>
-              </select>
-            </div>
-
             {/* Status */}
             <div>
               <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
@@ -183,94 +177,118 @@ const TaskForm: React.FC<TaskFormProps> = ({
             </div>
           </div>
           
-          {/* Linha 2: Lista e Cliente */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Lista */}
-            <div>
-              <label htmlFor="list" className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                <Clock size={14} className="mr-1" />
-                Lista
-              </label>
-              <select
-                id="list"
-                className="w-full rounded-md border-gray-200 focus:border-blue-500 focus:ring-blue-500"
-                value={selectedListId}
-                onChange={(e) => setSelectedListId(e.target.value)}
-                required
-              >
-                {lists.map(list => (
-                  <option key={list.id} value={list.id}>{list.name}</option>
-                ))}
-              </select>
-            </div>
-            
-            {/* Cliente */}
-            <div>
-              <label htmlFor="client" className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                <User size={14} className="mr-1" />
-                Cliente (opcional)
-              </label>
-              <select
-                id="client"
-                className="w-full rounded-md border-gray-200 focus:border-blue-500 focus:ring-blue-500"
-                value={selectedClientId}
-                onChange={(e) => setSelectedClientId(e.target.value)}
-              >
-                <option value="">Sem cliente</option>
-                {clients.map(client => (
-                  <option key={client.id} value={client.id}>{client.name}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-          
-          {/* Tags */}
-          <div>
-            <label htmlFor="tags" className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-              <Tag size={14} className="mr-1" />
-              Tags
-            </label>
-            <div className="flex">
-              <input
-                id="tags"
-                type="text"
-                className="flex-1 rounded-l-md border-gray-200 focus:border-blue-500 focus:ring-blue-500"
-                placeholder="Adicionar tag"
-                value={newTag}
-                onChange={(e) => setNewTag(e.target.value)}
-                onKeyDown={handleKeyDown}
-              />
-              <button
-                type="button"
-                className="px-3 py-2 bg-gray-100 text-gray-600 rounded-r-md border border-gray-200 hover:bg-gray-200"
-                onClick={handleAddTag}
-              >
-                <Plus size={14} />
-              </button>
-            </div>
-            
-            {tags.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-2">
-                {tags.map(tag => (
-                  <span 
-                    key={tag} 
-                    className="flex items-center text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded-full"
-                  >
-                    {tag}
-                    <button
-                      type="button"
-                      className="ml-1 text-gray-400 hover:text-gray-600"
-                      onClick={() => removeTag(tag)}
-                    >
-                      <X size={12} />
-                    </button>
-                  </span>
-                ))}
+          {/* Linha 2: Lista e Cliente (apenas se não for subtarefa) */}
+          {!isSubtask && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Lista */}
+              <div>
+                <label htmlFor="list" className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                  <Clock size={14} className="mr-1" />
+                  Lista
+                </label>
+                <select
+                  id="list"
+                  className="w-full rounded-md border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                  value={selectedListId}
+                  onChange={(e) => setSelectedListId(e.target.value)}
+                  required
+                >
+                  {lists.map(list => (
+                    <option key={list.id} value={list.id}>{list.name}</option>
+                  ))}
+                </select>
               </div>
-            )}
-          </div>
+              
+              {/* Cliente */}
+              <div>
+                <label htmlFor="client" className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                  <User size={14} className="mr-1" />
+                  Cliente (opcional)
+                </label>
+                <select
+                  id="client"
+                  className="w-full rounded-md border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                  value={selectedClientId}
+                  onChange={(e) => setSelectedClientId(e.target.value)}
+                >
+                  <option value="">Sem cliente</option>
+                  {clients.map(client => (
+                    <option key={client.id} value={client.id}>{client.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
           
-          {/* Tarefa recorrente */}
+          {/* Prioridade (apenas se não for subtarefa) */}
+          {!isSubtask && (
+            <div>
+              <label htmlFor="priority" className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                <Flag size={14} className="mr-1" />
+                Prioridade
+              </label>
+              <select
+                id="priority"
+                className="w-full rounded-md border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                value={priority}
+                onChange={(e) => setPriority(e.target.value as 'baixa' | 'média' | 'alta')}
+              >
+                <option value="baixa">Baixa</option>
+                <option value="média">Média</option>
+                <option value="alta">Alta</option>
+              </select>
+            </div>
+          )}
+          
+          {/* Tags (apenas se não for subtarefa) */}
+          {!isSubtask && (
+            <div>
+              <label htmlFor="tags" className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                <Tag size={14} className="mr-1" />
+                Tags
+              </label>
+              <div className="flex">
+                <input
+                  id="tags"
+                  type="text"
+                  className="flex-1 rounded-l-md border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                  placeholder="Adicionar tag"
+                  value={newTag}
+                  onChange={(e) => setNewTag(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                />
+                <button
+                  type="button"
+                  className="px-3 py-2 bg-gray-100 text-gray-600 rounded-r-md border border-gray-200 hover:bg-gray-200"
+                  onClick={handleAddTag}
+                >
+                  <Plus size={14} />
+                </button>
+              </div>
+              
+              {tags.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {tags.map(tag => (
+                    <span 
+                      key={tag} 
+                      className="flex items-center text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded-full"
+                    >
+                      {tag}
+                      <button
+                        type="button"
+                        className="ml-1 text-gray-400 hover:text-gray-600"
+                        onClick={() => removeTag(tag)}
+                      >
+                        <X size={12} />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+          
+          {/* Tarefa recorrente (apenas se não for subtarefa) */}
           {!isSubtask && (
             <div className="mt-4">
               <div className="flex items-center">

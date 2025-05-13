@@ -141,11 +141,11 @@ export const TasksView: React.FC = () => {
       </div>
 
       {/* Barra de Filtros */}
-      <div className="mb-6 bg-white border border-gray-200 rounded-lg p-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="mb-6 bg-white border border-gray-200 rounded-lg p-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {/* Status */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700">
               Status
             </label>
             <select
@@ -163,8 +163,8 @@ export const TasksView: React.FC = () => {
           </div>
 
           {/* Prioridade */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700">
               Prioridade
             </label>
             <select
@@ -183,8 +183,8 @@ export const TasksView: React.FC = () => {
           </div>
 
           {/* Lista */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700">
               Lista
             </label>
             <select
@@ -203,8 +203,8 @@ export const TasksView: React.FC = () => {
           </div>
 
           {/* Cliente */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700">
               Cliente
             </label>
             <select
@@ -223,8 +223,8 @@ export const TasksView: React.FC = () => {
           </div>
         </div>
 
-        <div className="mt-4 flex items-center justify-between">
-          <div className="flex items-center space-x-4">
+        <div className="mt-6 flex items-center justify-between">
+          <div className="flex items-center space-x-6">
             <label className="flex items-center text-sm text-gray-600">
               <input 
                 type="checkbox" 

@@ -5,12 +5,15 @@ import { useAppContext } from '../../context/AppContext';
 import TasksView from '../views/TasksView';
 import CalendarView from '../views/CalendarView';
 import NotesView from '../views/NotesView';
+import DashboardView from '../views/DashboardView';
 
 export const Layout: React.FC = () => {
   const { activeView } = useAppContext();
 
   const renderMainContent = () => {
     switch (activeView) {
+      case 'dashboard':
+        return <DashboardView />;
       case 'tarefas':
         return <TasksView />;
       case 'calendario':
@@ -18,7 +21,7 @@ export const Layout: React.FC = () => {
       case 'notas':
         return <NotesView />;
       default:
-        return <TasksView />;
+        return <DashboardView />;
     }
   };
 
@@ -35,4 +38,4 @@ export const Layout: React.FC = () => {
   );
 };
 
-export default Layout;
+export default Layout

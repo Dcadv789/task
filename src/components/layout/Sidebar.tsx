@@ -10,7 +10,8 @@ import {
   Briefcase, 
   Folder, 
   Hash,
-  Users
+  Users,
+  LayoutDashboard
 } from 'lucide-react';
 
 const iconsMap: Record<string, React.ReactNode> = {
@@ -49,6 +50,22 @@ export const Sidebar: React.FC = () => {
         <div className="space-y-8">
           {/* Seções principais */}
           <div className="space-y-1">
+            <button 
+              className={`flex items-center w-full p-2 rounded-lg text-left ${
+                activeView === 'dashboard'
+                  ? 'bg-blue-50 text-blue-600'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+              onClick={() => {
+                setActiveView('dashboard');
+                setSelectedListId(null);
+                setSelectedClientId(null);
+              }}
+            >
+              <LayoutDashboard size={18} className="mr-2" />
+              <span>Dashboard</span>
+            </button>
+            
             <button 
               className={`flex items-center w-full p-2 rounded-lg text-left ${
                 activeView === 'tarefas' && !selectedListId && !selectedClientId
@@ -162,6 +179,6 @@ export const Sidebar: React.FC = () => {
       </div>
     </aside>
   );
-};
+}
 
 export default Sidebar;

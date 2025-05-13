@@ -13,7 +13,8 @@ import {
   Flag,
   Tag,
   Repeat,
-  Plus
+  Plus,
+  ChevronRight
 } from 'lucide-react';
 import { formatDate } from '../../utils/dateUtils';
 import TaskForm from './TaskForm';
@@ -100,9 +101,14 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, showSubtasks = true }) => {
           
           <div className="flex-1">
             <div className="flex items-start justify-between">
-              <h3 className={`font-medium ${task.completed ? 'line-through text-gray-500 dark:text-gray-400' : 'text-gray-900 dark:text-white'}`}>
-                {task.title}
-              </h3>
+              <div className="flex items-center">
+                {task.parentId && (
+                  <ChevronRight size={16} className="text-gray-400 mr-2" />
+                )}
+                <h3 className={`font-medium ${task.completed ? 'line-through text-gray-500 dark:text-gray-400' : 'text-gray-900 dark:text-white'}`}>
+                  {task.title}
+                </h3>
+              </div>
               
               <div className="flex space-x-1 ml-2">
                 <button 
@@ -135,30 +141,32 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, showSubtasks = true }) => {
                 </div>
               )}
               
-              <div className={`flex items-center text-xs px-2 py-1 rounded-full ${priorityColors[task.priority]}`}>
-                {priorityIcons[task.priority]}
-                <span className="ml-1 capitalize">{task.priority}</span>
-              </div>
+              {!task.parentId && (
+                <div className={`flex items-center text-xs px-2 py-1 rounded-full ${priorityColors[task.priority]}`}>
+                  {priorityIcons[task.priority]}
+                  <span className="ml-1 capitalize">{task.priority}</span>
+                </div>
+              )}
 
               <div className={`flex items-center text-xs px-2 py-1 rounded-full ${statusColors[task.status]}`}>
                 <span>{statusLabels[task.status]}</span>
               </div>
               
-              {client && (
+              {client && !task.parentId && (
                 <div className="flex items-center text-xs px-2 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded-full">
                   <User size={12} className="mr-1" />
                   <span>{client.name}</span>
                 </div>
               )}
               
-              {task.recurrence && (
+              {task.recurrence && !task.parentId && (
                 <div className="flex items-center text-xs px-2 py-1 bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 rounded-full">
                   <Repeat size={12} className="mr-1" />
                   <span>Recorrente</span>
                 </div>
               )}
               
-              {task.tags && task.tags.length > 0 && (isExpanded || task.tags.length === 1) && (
+              {!task.parentId && task.tags && task.tags.length > 0 && (isExpanded || task.tags.length === 1) && (
                 task.tags.map(tag => (
                   <div 
                     key={tag} 
@@ -170,7 +178,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, showSubtasks = true }) => {
                 ))
               )}
               
-              {!isExpanded && task.tags && task.tags.length > 1 && (
+              {!task.parentId && !isExpanded && task.tags && task.tags.length > 1 && (
                 <div className="flex items-center text-xs px-2 py-1 bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 rounded-full">
                   <Tag size={12} className="mr-1" />
                   <span>+{task.tags.length - 1}</span>
@@ -196,27 +204,30 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, showSubtasks = true }) => {
                   onClose={() => setIsAddingSubtask(false)}
                   onSubmit={handleAddSubtask}
                   isSubtask
+                  parentTask={task}
                 />
               </div>
             )}
             
             {showSubtasks && subtasks.length > 0 && isExpanded && (
-              <div className="mt-3 pl-4 border-l-2 border-gray-100 dark:border-gray-700">
-                <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Subtarefas</h4>
-                {subtasks.map(subtask => (
-                  <TaskCard 
-                    key={subtask.id} 
-                    task={subtask} 
-                    showSubtasks={false}
-                  />
-                ))}
+              <div className="mt-4 space-y-2">
+                <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400">Subtarefas ({subtasks.filter(s => s.completed).length}/{subtasks.length})</h4>
+                <div className="space-y-2">
+                  {subtasks.map(subtask => (
+                    <TaskCard 
+                      key={subtask.id} 
+                      task={subtask} 
+                      showSubtasks={false}
+                    />
+                  ))}
+                </div>
               </div>
             )}
             
             {showSubtasks && subtasks.length > 0 && !isExpanded && (
               <div className="mt-2">
                 <span className="text-xs text-gray-500 dark:text-gray-400">
-                  {subtasks.filter(s => s.completed).length}/{subtasks.length} subtarefas
+                  {subtasks.filter(s => s.completed).length}/{subtasks.length} subtarefas concluídas
                 </span>
               </div>
             )}
@@ -224,7 +235,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, showSubtasks = true }) => {
         </div>
       </div>
       
-      {(task.description || subtasks.length > 0 || task.tags.length > 1) && (
+      {(task.description || subtasks.length > 0 || task.tags.length > 1) && !task.parentId && (
         <div 
           className="px-4 py-2 border-t border-gray-100 dark:border-gray-700 text-xs text-center text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
           onClick={() => setIsExpanded(!isExpanded)}

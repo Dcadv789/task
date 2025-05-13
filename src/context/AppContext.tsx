@@ -8,13 +8,13 @@ interface AppContextType {
   clients: Client[];
   notes: Note[];
   currentUser: User;
-  activeView: 'tarefas' | 'calendario' | 'notas';
+  activeView: 'dashboard' | 'tarefas' | 'calendario' | 'notas';
   selectedListId: string | null;
   selectedClientId: string | null;
   searchQuery: string;
   darkMode: boolean;
   setDarkMode: (mode: boolean) => void;
-  setActiveView: (view: 'tarefas' | 'calendario' | 'notas') => void;
+  setActiveView: (view: 'dashboard' | 'tarefas' | 'calendario' | 'notas') => void;
   setSelectedListId: (id: string | null) => void;
   setSelectedClientId: (id: string | null) => void;
   setSearchQuery: (query: string) => void;
@@ -51,7 +51,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [clients, setClients] = useState<Client[]>(mockData.clients);
   const [notes, setNotes] = useState<Note[]>(mockData.notes);
   const [currentUser] = useState<User>(mockData.user);
-  const [activeView, setActiveView] = useState<'tarefas' | 'calendario' | 'notas'>('tarefas');
+  const [activeView, setActiveView] = useState<'dashboard' | 'tarefas' | 'calendario' | 'notas'>('dashboard');
   const [selectedListId, setSelectedListId] = useState<string | null>(null);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
