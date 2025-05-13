@@ -7,7 +7,8 @@ export interface Task {
   status: 'em_aberto' | 'em_andamento' | 'concluido' | 'nao_feito';
   dueDate: string | null;
   createdAt: string;
-  clientId: string | null;
+  clientIds: string[]; // Modificado de clientId para clientIds
+  completedClientIds: string[]; // Novo campo para rastrear conclusões por cliente
   listId: string;
   parentId: string | null;
   recurrence: Recurrence | null;

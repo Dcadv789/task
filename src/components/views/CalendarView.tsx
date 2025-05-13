@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { Task } from '../../types';
-import { Plus } from 'lucide-react';
+import { Plus, Clock, CheckSquare, Calendar } from 'lucide-react';
 import CalendarFilter from '../calendar/CalendarFilter';
 import TaskModal from '../calendar/TaskModal';
 
@@ -172,47 +172,86 @@ export const CalendarView: React.FC = () => {
     const today = new Date();
 
     return (
-      <div className="flex-1 overflow-auto">
-        <div className="grid grid-cols-7 gap-4">
-          {weekDays.map((date, index) => {
-            const tasksForDay = getTasksForDate(date);
-            const isToday = date.toDateString() === today.toDateString();
+      <div className="grid grid-cols-7 gap-6">
+        {weekDays.map((date, index) => {
+          const tasksForDay = getTasksForDate(date);
+          const isToday = date.toDateString() === today.toDateString();
 
+          if (tasksForDay.length === 0) {
             return (
-              <div key={index} className="min-h-[200px]">
-                <div className={`p-2 text-center mb-2 rounded-lg ${
-                  isToday ? 'bg-blue-100 text-blue-800' : 'bg-gray-100'
+              <div key={index} className="flex flex-col">
+                <div className={`p-3 text-center rounded-lg mb-4 ${
+                  isToday ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-700'
                 }`}>
                   <div className="text-sm font-medium">
                     {date.toLocaleDateString('pt-BR', { weekday: 'short' })}
                   </div>
-                  <div className="text-lg">
+                  <div className="text-lg font-semibold">
                     {date.getDate()}
                   </div>
                 </div>
-                <div className="space-y-2">
-                  {tasksForDay.map(task => (
-                    <button
-                      key={task.id}
-                      className={`w-full text-left p-2 rounded-lg text-sm ${
-                        task.completed 
-                          ? 'bg-gray-100 text-gray-500 line-through' 
-                          : task.priority === 'alta' 
-                            ? 'bg-red-100 text-red-800'
-                            : task.priority === 'média'
-                              ? 'bg-yellow-100 text-yellow-800'
-                              : 'bg-blue-100 text-blue-800'
-                      }`}
-                      onClick={() => setSelectedTask(task)}
-                    >
-                      {task.title}
-                    </button>
-                  ))}
-                </div>
               </div>
             );
-          })}
-        </div>
+          }
+
+          return (
+            <div key={index} className="flex flex-col">
+              <div className={`p-3 text-center rounded-lg mb-4 ${
+                isToday ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-700'
+              }`}>
+                <div className="text-sm font-medium">
+                  {date.toLocaleDateString('pt-BR', { weekday: 'short' })}
+                </div>
+                <div className="text-lg font-semibold">
+                  {date.getDate()}
+                </div>
+              </div>
+              <div className="space-y-3">
+                {tasksForDay.map(task => (
+                  <button
+                    key={task.id}
+                    className="w-full text-left"
+                    onClick={() => setSelectedTask(task)}
+                  >
+                    <div className={`p-3 rounded-lg shadow-sm border transition-all ${
+                      task.completed 
+                        ? 'bg-gray-50 border-gray-200'
+                        : task.priority === 'alta'
+                          ? 'bg-white border-red-200 hover:border-red-300'
+                          : task.priority === 'média'
+                            ? 'bg-white border-yellow-200 hover:border-yellow-300'
+                            : 'bg-white border-blue-200 hover:border-blue-300'
+                    }`}>
+                      <div className="flex items-start gap-2">
+                        {task.completed ? (
+                          <CheckSquare className="w-4 h-4 mt-1 text-green-500" />
+                        ) : (
+                          <Clock className={`w-4 h-4 mt-1 ${
+                            task.priority === 'alta' ? 'text-red-500' :
+                            task.priority === 'média' ? 'text-yellow-500' :
+                            'text-blue-500'
+                          }`} />
+                        )}
+                        <div className="flex-1">
+                          <h4 className={`text-sm font-medium ${
+                            task.completed ? 'text-gray-500 line-through' : 'text-gray-900'
+                          }`}>
+                            {task.title}
+                          </h4>
+                          {task.description && (
+                            <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+                              {task.description}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          );
+        })}
       </div>
     );
   };
@@ -221,62 +260,102 @@ export const CalendarView: React.FC = () => {
     const tasksForDay = getTasksForDate(currentDate);
     const isToday = currentDate.toDateString() === new Date().toDateString();
 
-    return (
-      <div className="flex-1 overflow-auto">
-        <div className={`p-4 text-center mb-4 rounded-lg ${
-          isToday ? 'bg-blue-100 text-blue-800' : 'bg-gray-100'
-        }`}>
-          <div className="text-lg font-medium">
+    if (tasksForDay.length === 0) {
+      return (
+        <div className="flex flex-col items-center justify-center py-12 bg-white rounded-lg border border-gray-200">
+          <div className={`p-4 rounded-full ${
+            isToday ? 'bg-blue-100' : 'bg-gray-100'
+          }`}>
+            <Calendar className={`w-8 h-8 ${
+              isToday ? 'text-blue-600' : 'text-gray-500'
+            }`} />
+          </div>
+          <h3 className="mt-4 text-lg font-medium text-gray-900">
             {currentDate.toLocaleDateString('pt-BR', { 
               weekday: 'long', 
               day: 'numeric', 
               month: 'long' 
             })}
-          </div>
+          </h3>
+          <p className="mt-2 text-gray-500">
+            Nenhuma tarefa para este dia
+          </p>
         </div>
-        <div className="space-y-3">
+      );
+    }
+
+    return (
+      <div className="space-y-6">
+        <div className={`p-4 rounded-lg text-center ${
+          isToday ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'
+        }`}>
+          <h2 className="text-lg font-semibold">
+            {currentDate.toLocaleDateString('pt-BR', { 
+              weekday: 'long', 
+              day: 'numeric', 
+              month: 'long' 
+            })}
+          </h2>
+        </div>
+
+        <div className="space-y-4">
           {tasksForDay.map(task => (
             <button
               key={task.id}
-              className={`w-full text-left p-4 rounded-lg ${
-                task.completed 
-                  ? 'bg-gray-100 text-gray-500' 
-                  : task.priority === 'alta' 
-                    ? 'bg-red-50 hover:bg-red-100'
-                    : task.priority === 'média'
-                      ? 'bg-yellow-50 hover:bg-yellow-100'
-                      : 'bg-blue-50 hover:bg-blue-100'
-              }`}
+              className="w-full text-left"
               onClick={() => setSelectedTask(task)}
             >
-              <div className="flex justify-between items-start">
-                <div>
-                  <h3 className={`font-medium ${task.completed ? 'line-through' : ''}`}>
-                    {task.title}
-                  </h3>
-                  {task.description && (
-                    <p className="text-sm mt-1 text-gray-600">
-                      {task.description}
-                    </p>
-                  )}
-                </div>
-                <div className={`px-2 py-1 rounded text-xs font-medium ${
-                  task.priority === 'alta' 
-                    ? 'bg-red-100 text-red-800'
+              <div className={`p-4 rounded-lg shadow-sm border transition-all ${
+                task.completed 
+                  ? 'bg-gray-50 border-gray-200'
+                  : task.priority === 'alta'
+                    ? 'bg-white border-red-200 hover:border-red-300'
                     : task.priority === 'média'
-                      ? 'bg-yellow-100 text-yellow-800'
-                      : 'bg-blue-100 text-blue-800'
-                }`}>
-                  {task.priority}
+                      ? 'bg-white border-yellow-200 hover:border-yellow-300'
+                      : 'bg-white border-blue-200 hover:border-blue-300'
+              }`}>
+                <div className="flex items-start gap-3">
+                  {task.completed ? (
+                    <CheckSquare className="w-5 h-5 mt-1 text-green-500" />
+                  ) : (
+                    <Clock className={`w-5 h-5 mt-1 ${
+                      task.priority === 'alta' ? 'text-red-500' :
+                      task.priority === 'média' ? 'text-yellow-500' :
+                      'text-blue-500'
+                    }`} />
+                  )}
+                  <div className="flex-1">
+                    <h3 className={`text-base font-medium ${
+                      task.completed ? 'text-gray-500 line-through' : 'text-gray-900'
+                    }`}>
+                      {task.title}
+                    </h3>
+                    {task.description && (
+                      <p className="mt-1 text-sm text-gray-600">
+                        {task.description}
+                      </p>
+                    )}
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                        task.priority === 'alta' 
+                          ? 'bg-red-100 text-red-700'
+                          : task.priority === 'média'
+                            ? 'bg-yellow-100 text-yellow-700'
+                            : 'bg-blue-100 text-blue-700'
+                      }`}>
+                        {task.priority}
+                      </span>
+                      {task.tags.map(tag => (
+                        <span key={tag} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
             </button>
           ))}
-          {tasksForDay.length === 0 && (
-            <div className="text-center py-8 text-gray-500">
-              Nenhuma tarefa para este dia
-            </div>
-          )}
         </div>
       </div>
     );
@@ -315,8 +394,10 @@ export const CalendarView: React.FC = () => {
           </>
         )}
         
-        {currentView === 'week' && renderWeekView()}
-        {currentView === 'day' && renderDayView()}
+        <div className="p-6">
+          {currentView === 'week' && renderWeekView()}
+          {currentView === 'day' && renderDayView()}
+        </div>
       </div>
 
       {selectedTask && (

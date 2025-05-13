@@ -14,18 +14,19 @@ import {
   Tag,
   Repeat,
   Plus,
-  ChevronRight
+  ChevronRight,
+  Users
 } from 'lucide-react';
 import { formatDate } from '../../utils/dateUtils';
-import TaskForm from './TaskForm';
+import TaskModal from './TaskModal';
+import CompleteTaskModal from './CompleteTaskModal';
 
 interface TaskCardProps {
   task: Task;
   showSubtasks?: boolean;
-  onEdit?: () => void;
 }
 
-const TaskCard: React.FC<TaskCardProps> = ({ task, showSubtasks = true, onEdit }) => {
+const TaskCard: React.FC<TaskCardProps> = ({ task, showSubtasks = true }) => {
   const { 
     toggleTaskCompletion, 
     deleteTask, 
@@ -37,9 +38,11 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, showSubtasks = true, onEdit }
   
   const [isExpanded, setIsExpanded] = useState(false);
   const [isAddingSubtask, setIsAddingSubtask] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isCompleteModalOpen, setIsCompleteModalOpen] = useState(false);
   
   const subtasks = tasks.filter(t => t.parentId === task.id);
-  const client = clients.find(c => c.id === task.clientId);
+  const taskClients = clients.filter(c => task.clientIds.includes(c.id));
   
   const priorityColors = {
     'baixa': 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
@@ -83,181 +86,204 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, showSubtasks = true, onEdit }
     setIsAddingSubtask(false);
   };
 
+  const handleTaskCompletion = () => {
+    if (task.clientIds.length > 1 && !task.completed) {
+      setIsCompleteModalOpen(true);
+    } else {
+      toggleTaskCompletion(task.id);
+    }
+  };
+
   return (
-    <div className={`bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg shadow-sm mb-3 transition-all ${
-      task.completed ? 'opacity-75' : ''
-    }`}>
-      <div className="p-4">
-        <div className="flex items-start">
-          <button 
-            className="flex-shrink-0 mt-1 mr-3"
-            onClick={() => toggleTaskCompletion(task.id)}
-          >
-            {task.completed ? (
-              <CheckCircle className="text-green-500 h-5 w-5" />
-            ) : (
-              <Circle className="text-gray-400 dark:text-gray-500 h-5 w-5" />
-            )}
-          </button>
-          
-          <div className="flex-1">
-            <div className="flex items-start justify-between">
-              <div className="flex items-center">
-                {task.parentId && (
-                  <ChevronRight size={16} className="text-gray-400 mr-2" />
-                )}
-                <h3 className={`font-medium ${task.completed ? 'line-through text-gray-500 dark:text-gray-400' : 'text-gray-900 dark:text-white'}`}>
-                  {task.title}
-                </h3>
-              </div>
-              
-              <div className="flex space-x-1 ml-2">
-                <button 
-                  className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
-                  aria-label="Editar tarefa"
-                  onClick={onEdit}
-                >
-                  <Edit size={16} />
-                </button>
-                <button 
-                  className="text-gray-400 hover:text-red-600 dark:text-gray-500 dark:hover:text-red-400 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
-                  aria-label="Excluir tarefa"
-                  onClick={() => deleteTask(task.id)}
-                >
-                  <Trash size={16} />
-                </button>
-              </div>
-            </div>
+    <>
+      <div className={`bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg shadow-sm mb-3 transition-all ${
+        task.completed ? 'opacity-75' : ''
+      }`}>
+        <div className="p-4">
+          <div className="flex items-start">
+            <button 
+              className="flex-shrink-0 mt-1 mr-3"
+              onClick={handleTaskCompletion}
+            >
+              {task.completed ? (
+                <CheckCircle className="text-green-500 h-5 w-5" />
+              ) : (
+                <Circle className="text-gray-400 dark:text-gray-500 h-5 w-5" />
+              )}
+            </button>
             
-            {isExpanded && task.description && (
-              <p className="text-gray-600 dark:text-gray-300 text-sm mt-2 mb-3">{task.description}</p>
-            )}
-            
-            <div className="flex flex-wrap gap-2 mt-2">
-              {task.dueDate && (
-                <div className={`flex items-center text-xs px-2 py-1 rounded-full ${
-                  isPastDue ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
-                }`}>
-                  <Clock size={12} className="mr-1" />
-                  <span>{formatDate(task.dueDate)}</span>
+            <div className="flex-1">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center">
+                  {task.parentId && (
+                    <ChevronRight size={16} className="text-gray-400 mr-2" />
+                  )}
+                  <h3 className={`font-medium ${task.completed ? 'line-through text-gray-500 dark:text-gray-400' : 'text-gray-900 dark:text-white'}`}>
+                    {task.title}
+                  </h3>
                 </div>
-              )}
-              
-              {!task.parentId && (
-                <div className={`flex items-center text-xs px-2 py-1 rounded-full ${priorityColors[task.priority]}`}>
-                  {priorityIcons[task.priority]}
-                  <span className="ml-1 capitalize">{task.priority}</span>
-                </div>
-              )}
-
-              <div className={`flex items-center text-xs px-2 py-1 rounded-full ${statusColors[task.status]}`}>
-                <span>{statusLabels[task.status]}</span>
-              </div>
-              
-              {client && !task.parentId && (
-                <div className="flex items-center text-xs px-2 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded-full">
-                  <User size={12} className="mr-1" />
-                  <span>{client.name}</span>
-                </div>
-              )}
-              
-              {task.recurrence && !task.parentId && (
-                <div className="flex items-center text-xs px-2 py-1 bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 rounded-full">
-                  <Repeat size={12} className="mr-1" />
-                  <span>Recorrente</span>
-                </div>
-              )}
-              
-              {!task.parentId && task.tags && task.tags.length > 0 && (isExpanded || task.tags.length === 1) && (
-                task.tags.map(tag => (
-                  <div 
-                    key={tag} 
-                    className="flex items-center text-xs px-2 py-1 bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 rounded-full"
+                
+                <div className="flex space-x-1 ml-2">
+                  <button 
+                    className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+                    aria-label="Editar tarefa"
+                    onClick={() => setIsEditModalOpen(true)}
                   >
-                    <Tag size={12} className="mr-1" />
-                    <span>{tag}</span>
-                  </div>
-                ))
+                    <Edit size={16} />
+                  </button>
+                  <button 
+                    className="text-gray-400 hover:text-red-600 dark:text-gray-500 dark:hover:text-red-400 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+                    aria-label="Excluir tarefa"
+                    onClick={() => deleteTask(task.id)}
+                  >
+                    <Trash size={16} />
+                  </button>
+                </div>
+              </div>
+              
+              {isExpanded && task.description && (
+                <p className="text-gray-600 dark:text-gray-300 text-sm mt-2 mb-3">{task.description}</p>
               )}
               
-              {!task.parentId && !isExpanded && task.tags && task.tags.length > 1 && (
-                <div className="flex items-center text-xs px-2 py-1 bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 rounded-full">
-                  <Tag size={12} className="mr-1" />
-                  <span>+{task.tags.length - 1}</span>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {task.dueDate && (
+                  <div className={`flex items-center text-xs px-2 py-1 rounded-full ${
+                    isPastDue ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
+                  }`}>
+                    <Clock size={12} className="mr-1" />
+                    <span>{formatDate(task.dueDate)}</span>
+                  </div>
+                )}
+                
+                {!task.parentId && (
+                  <div className={`flex items-center text-xs px-2 py-1 rounded-full ${priorityColors[task.priority]}`}>
+                    {priorityIcons[task.priority]}
+                    <span className="ml-1 capitalize">{task.priority}</span>
+                  </div>
+                )}
+
+                <div className={`flex items-center text-xs px-2 py-1 rounded-full ${statusColors[task.status]}`}>
+                  <span>{statusLabels[task.status]}</span>
+                </div>
+                
+                {taskClients.length > 0 && !task.parentId && (
+                  <div className="flex items-center text-xs px-2 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded-full">
+                    <Users size={12} className="mr-1" />
+                    <span>{taskClients.length} {taskClients.length === 1 ? 'cliente' : 'clientes'}</span>
+                  </div>
+                )}
+                
+                {task.recurrence && !task.parentId && (
+                  <div className="flex items-center text-xs px-2 py-1 bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 rounded-full">
+                    <Repeat size={12} className="mr-1" />
+                    <span>Recorrente</span>
+                  </div>
+                )}
+                
+                {!task.parentId && task.tags && task.tags.length > 0 && (isExpanded || task.tags.length === 1) && (
+                  task.tags.map(tag => (
+                    <div 
+                      key={tag} 
+                      className="flex items-center text-xs px-2 py-1 bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 rounded-full"
+                    >
+                      <Tag size={12} className="mr-1" />
+                      <span>{tag}</span>
+                    </div>
+                  ))
+                )}
+                
+                {!task.parentId && !isExpanded && task.tags && task.tags.length > 1 && (
+                  <div className="flex items-center text-xs px-2 py-1 bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 rounded-full">
+                    <Tag size={12} className="mr-1" />
+                    <span>+{task.tags.length - 1}</span>
+                  </div>
+                )}
+              </div>
+
+              {!task.parentId && (
+                <div className="mt-3">
+                  <button
+                    className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center"
+                    onClick={() => setIsAddingSubtask(true)}
+                  >
+                    <Plus size={14} className="mr-1" />
+                    Adicionar subtarefa
+                  </button>
+                </div>
+              )}
+              
+              {isAddingSubtask && (
+                <div className="mt-3">
+                  <TaskModal
+                    isOpen={isAddingSubtask}
+                    onClose={() => setIsAddingSubtask(false)}
+                    preselectedListId={task.listId}
+                    preselectedClientIds={task.clientIds}
+                  />
+                </div>
+              )}
+              
+              {showSubtasks && subtasks.length > 0 && isExpanded && (
+                <div className="mt-4 space-y-2">
+                  <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400">Subtarefas ({subtasks.filter(s => s.completed).length}/{subtasks.length})</h4>
+                  <div className="space-y-2">
+                    {subtasks.map(subtask => (
+                      <TaskCard 
+                        key={subtask.id} 
+                        task={subtask} 
+                        showSubtasks={false}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {showSubtasks && subtasks.length > 0 && !isExpanded && (
+                <div className="mt-2">
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                    {subtasks.filter(s => s.completed).length}/{subtasks.length} subtarefas concluídas
+                  </span>
                 </div>
               )}
             </div>
-
-            {!task.parentId && (
-              <div className="mt-3">
-                <button
-                  className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center"
-                  onClick={() => setIsAddingSubtask(true)}
-                >
-                  <Plus size={14} className="mr-1" />
-                  Adicionar subtarefa
-                </button>
-              </div>
-            )}
-            
-            {isAddingSubtask && (
-              <div className="mt-3">
-                <TaskForm
-                  onClose={() => setIsAddingSubtask(false)}
-                  onSubmit={handleAddSubtask}
-                  isSubtask
-                  parentTask={task}
-                />
-              </div>
-            )}
-            
-            {showSubtasks && subtasks.length > 0 && isExpanded && (
-              <div className="mt-4 space-y-2">
-                <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400">Subtarefas ({subtasks.filter(s => s.completed).length}/{subtasks.length})</h4>
-                <div className="space-y-2">
-                  {subtasks.map(subtask => (
-                    <TaskCard 
-                      key={subtask.id} 
-                      task={subtask} 
-                      showSubtasks={false}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-            
-            {showSubtasks && subtasks.length > 0 && !isExpanded && (
-              <div className="mt-2">
-                <span className="text-xs text-gray-500 dark:text-gray-400">
-                  {subtasks.filter(s => s.completed).length}/{subtasks.length} subtarefas concluídas
-                </span>
-              </div>
-            )}
           </div>
         </div>
+        
+        {(task.description || subtasks.length > 0 || task.tags.length > 1) && !task.parentId && (
+          <div 
+            className="px-4 py-2 border-t border-gray-100 dark:border-gray-700 text-xs text-center text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
+            onClick={() => setIsExpanded(!isExpanded)}
+          >
+            <div className="flex items-center justify-center">
+              {isExpanded ? (
+                <>
+                  <ChevronUp size={14} className="mr-1" />
+                  <span>Recolher</span>
+                </>
+              ) : (
+                <>
+                  <ChevronDown size={14} className="mr-1" />
+                  <span>Expandir</span>
+                </>
+              )}
+            </div>
+          </div>
+        )}
       </div>
-      
-      {(task.description || subtasks.length > 0 || task.tags.length > 1) && !task.parentId && (
-        <div 
-          className="px-4 py-2 border-t border-gray-100 dark:border-gray-700 text-xs text-center text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
-          onClick={() => setIsExpanded(!isExpanded)}
-        >
-          <div className="flex items-center justify-center">
-            {isExpanded ? (
-              <>
-                <ChevronUp size={14} className="mr-1" />
-                <span>Recolher</span>
-              </>
-            ) : (
-              <>
-                <ChevronDown size={14} className="mr-1" />
-                <span>Expandir</span>
-              </>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
+
+      <TaskModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        task={task}
+      />
+
+      <CompleteTaskModal
+        isOpen={isCompleteModalOpen}
+        onClose={() => setIsCompleteModalOpen(false)}
+        task={task}
+        clients={clients}
+      />
+    </>
   );
 };
 
