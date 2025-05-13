@@ -15,7 +15,8 @@ import {
   MessageSquare,
   Bell,
   ListPlus,
-  CheckCircle2
+  CheckCircle2,
+  ChevronRight
 } from 'lucide-react';
 import { formatDate, formatDateRelative } from '../../utils/dateUtils';
 import TaskStatusTimer from './TaskStatusTimer';
@@ -34,6 +35,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showObservationsModal, setShowObservationsModal] = useState(false);
   const [showAddSubtaskModal, setShowAddSubtaskModal] = useState(false);
+  const [showSubtasks, setShowSubtasks] = useState(false);
 
   const list = lists.find(l => l.id === task.listId);
   const taskClients = clients.filter(c => task.clientIds.includes(c.id));
@@ -75,6 +77,11 @@ const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
     updateTask(task.id, { subtasks: updatedSubtasks });
   };
 
+  const handleDeleteSubtask = (subtaskId: string) => {
+    const updatedSubtasks = task.subtasks?.filter(subtask => subtask.id !== subtaskId);
+    updateTask(task.id, { subtasks: updatedSubtasks });
+  };
+
   return (
     <>
       <div className={`bg-white rounded-lg shadow-sm border overflow-hidden transition-all duration-200 mb-4 ${
@@ -105,48 +112,34 @@ const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
               
               <div className="space-y-3">
                 <div>
-                  <h3 className={`text-lg font-medium mb-2 ${
-                    task.status === 'concluido'
-                      ? 'text-green-500 line-through'
-                      : task.status === 'nao_feito'
-                      ? 'text-red-500 line-through'
-                      : 'text-gray-900'
-                  }`}>
-                    {task.title}
-                  </h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className={`text-lg font-medium ${
+                      task.status === 'concluido'
+                        ? 'text-green-500 line-through'
+                        : task.status === 'nao_feito'
+                        ? 'text-red-500 line-through'
+                        : 'text-gray-900'
+                    }`}>
+                      {task.title}
+                    </h3>
+                    {task.subtasks && task.subtasks.length > 0 && (
+                      <button
+                        onClick={() => setShowSubtasks(!showSubtasks)}
+                        className="text-gray-400 hover:text-gray-600"
+                      >
+                        {showSubtasks ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
+                      </button>
+                    )}
+                  </div>
                   
                   {task.description && (
-                    <p className={`mb-3 text-sm px-1 ${
+                    <p className={`mt-2 text-sm px-1 ${
                       task.status === 'concluido' || task.status === 'nao_feito'
                         ? 'text-gray-400 line-through'
                         : 'text-gray-600'
                     }`}>
                       {task.description}
                     </p>
-                  )}
-
-                  {/* Subtarefas */}
-                  {task.subtasks && task.subtasks.length > 0 && (
-                    <div className="mt-4 space-y-2 border-t border-gray-100 pt-4">
-                      <h4 className="text-sm font-medium text-gray-700">Subtarefas</h4>
-                      {task.subtasks.map(subtask => (
-                        <div key={subtask.id} className="flex items-center space-x-2">
-                          <button
-                            onClick={() => handleSubtaskStatusChange(subtask.id, !subtask.completed)}
-                            className={`p-1 rounded-md ${
-                              subtask.completed ? 'text-green-500' : 'text-gray-400'
-                            }`}
-                          >
-                            {subtask.completed ? <CheckCircle2 size={16} /> : <Circle size={16} />}
-                          </button>
-                          <span className={`text-sm ${
-                            subtask.completed ? 'line-through text-gray-400' : 'text-gray-600'
-                          }`}>
-                            {subtask.title}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
                   )}
                 </div>
                 
@@ -230,6 +223,38 @@ const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
                         <Tag size={12} className="mr-1.5" />
                         {tag}
                       </span>
+                    ))}
+                  </div>
+                )}
+
+                {/* Subtarefas */}
+                {showSubtasks && task.subtasks && task.subtasks.length > 0 && (
+                  <div className="mt-4 space-y-2 border-t border-gray-100 pt-4">
+                    <h4 className="text-sm font-medium text-gray-700">Subtarefas</h4>
+                    {task.subtasks.map(subtask => (
+                      <div key={subtask.id} className="flex items-center justify-between group">
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => handleSubtaskStatusChange(subtask.id, !subtask.completed)}
+                            className={`p-1 rounded-md ${
+                              subtask.completed ? 'text-green-500' : 'text-gray-400'
+                            }`}
+                          >
+                            {subtask.completed ? <CheckCircle2 size={16} /> : <Circle size={16} />}
+                          </button>
+                          <span className={`text-sm ${
+                            subtask.completed ? 'line-through text-gray-400' : 'text-gray-600'
+                          }`}>
+                            {subtask.title}
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => handleDeleteSubtask(subtask.id)}
+                          className="p-1 text-gray-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Trash size={14} />
+                        </button>
+                      </div>
                     ))}
                   </div>
                 )}

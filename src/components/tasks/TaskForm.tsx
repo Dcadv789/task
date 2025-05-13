@@ -127,12 +127,12 @@ const TaskForm: React.FC<TaskFormProps> = ({
   
   return (
     <div className="bg-white border rounded-lg shadow-sm">
-      <div className="p-4 border-b border-gray-200 flex justify-between items-center">
-        <h2 className="text-lg font-medium text-gray-800">
+      <div className="p-6 border-b border-gray-200 flex justify-between items-center">
+        <h2 className="text-xl font-semibold text-gray-800">
           {taskId ? 'Editar Tarefa' : isSubtask ? 'Nova Subtarefa' : 'Nova Tarefa'}
         </h2>
         <button
-          className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100"
+          className="text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100"
           onClick={onClose}
           aria-label="Fechar"
         >
@@ -140,17 +140,17 @@ const TaskForm: React.FC<TaskFormProps> = ({
         </button>
       </div>
       
-      <form onSubmit={handleSubmit} className="p-4">
-        <div className="space-y-4">
+      <form onSubmit={handleSubmit} className="p-6">
+        <div className="space-y-6">
           {/* Título */}
           <div>
-            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
               Título
             </label>
             <input
               id="title"
               type="text"
-              className="w-full rounded-md border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+              className="w-full px-4 py-3 rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
               placeholder="Título da tarefa"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
@@ -162,12 +162,12 @@ const TaskForm: React.FC<TaskFormProps> = ({
             <>
               {/* Descrição */}
               <div>
-                <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
                   Descrição
                 </label>
                 <textarea
                   id="description"
-                  className="w-full rounded-md border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                  className="w-full px-4 py-3 rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                   placeholder="Descrição detalhada da tarefa"
                   rows={3}
                   value={description}
@@ -176,17 +176,17 @@ const TaskForm: React.FC<TaskFormProps> = ({
               </div>
               
               {/* Linha 1: Data e Status */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Data de vencimento */}
                 <div>
-                  <label htmlFor="dueDate" className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                    <Calendar size={14} className="mr-1" />
+                  <label htmlFor="dueDate" className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                    <Calendar size={16} className="mr-2" />
                     Data de vencimento
                   </label>
                   <input
                     id="dueDate"
                     type="date"
-                    className="w-full rounded-md border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                    className="w-full px-4 py-3 rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                     value={dueDate}
                     onChange={(e) => setDueDate(e.target.value)}
                   />
@@ -194,13 +194,13 @@ const TaskForm: React.FC<TaskFormProps> = ({
                 
                 {/* Status */}
                 <div>
-                  <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                    <Clock size={14} className="mr-1" />
+                  <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                    <Clock size={16} className="mr-2" />
                     Status
                   </label>
                   <select
                     id="status"
-                    className="w-full rounded-md border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                    className="w-full px-4 py-3 rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                     value={status}
                     onChange={(e) => setStatus(e.target.value as 'em_aberto' | 'em_andamento' | 'concluido' | 'nao_feito')}
                   >
@@ -212,16 +212,16 @@ const TaskForm: React.FC<TaskFormProps> = ({
               </div>
               
               {/* Linha 2: Lista e Cliente */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Lista */}
                 <div>
-                  <label htmlFor="list" className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                    <Clock size={14} className="mr-1" />
+                  <label htmlFor="list" className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                    <Clock size={16} className="mr-2" />
                     Lista
                   </label>
                   <select
                     id="list"
-                    className="w-full rounded-md border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                    className="w-full px-4 py-3 rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                     value={selectedListId}
                     onChange={(e) => setSelectedListId(e.target.value)}
                     required
@@ -234,13 +234,13 @@ const TaskForm: React.FC<TaskFormProps> = ({
                 
                 {/* Cliente */}
                 <div>
-                  <label htmlFor="client" className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                    <User size={14} className="mr-1" />
+                  <label htmlFor="client" className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                    <User size={16} className="mr-2" />
                     Cliente (opcional)
                   </label>
                   <select
                     id="client"
-                    className="w-full rounded-md border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                    className="w-full px-4 py-3 rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                     value={selectedClientId}
                     onChange={(e) => setSelectedClientId(e.target.value)}
                   >
@@ -254,13 +254,13 @@ const TaskForm: React.FC<TaskFormProps> = ({
               
               {/* Prioridade */}
               <div>
-                <label htmlFor="priority" className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                  <Flag size={14} className="mr-1" />
+                <label htmlFor="priority" className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                  <Flag size={16} className="mr-2" />
                   Prioridade
                 </label>
                 <select
                   id="priority"
-                  className="w-full rounded-md border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                  className="w-full px-4 py-3 rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                   value={priority}
                   onChange={(e) => setPriority(e.target.value as 'baixa' | 'média' | 'alta')}
                 >
@@ -272,15 +272,15 @@ const TaskForm: React.FC<TaskFormProps> = ({
               
               {/* Tags */}
               <div>
-                <label htmlFor="tags" className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                  <Tag size={14} className="mr-1" />
+                <label htmlFor="tags" className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                  <Tag size={16} className="mr-2" />
                   Tags
                 </label>
                 <div className="flex">
                   <input
                     id="tags"
                     type="text"
-                    className="flex-1 rounded-l-md border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                    className="flex-1 px-4 py-3 rounded-l-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                     placeholder="Adicionar tag"
                     value={newTag}
                     onChange={(e) => setNewTag(e.target.value)}
@@ -288,27 +288,27 @@ const TaskForm: React.FC<TaskFormProps> = ({
                   />
                   <button
                     type="button"
-                    className="px-3 py-2 bg-gray-100 text-gray-600 rounded-r-md border border-gray-200 hover:bg-gray-200"
+                    className="px-4 py-3 bg-gray-100 text-gray-600 rounded-r-lg border border-gray-300 hover:bg-gray-200"
                     onClick={handleAddTag}
                   >
-                    <Plus size={14} />
+                    <Plus size={16} />
                   </button>
                 </div>
                 
                 {tags.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-2">
+                  <div className="flex flex-wrap gap-2 mt-3">
                     {tags.map(tag => (
                       <span 
                         key={tag} 
-                        className="flex items-center text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded-full"
+                        className="flex items-center text-sm px-3 py-1.5 bg-gray-100 text-gray-700 rounded-full"
                       >
                         {tag}
                         <button
                           type="button"
-                          className="ml-1 text-gray-400 hover:text-gray-600"
+                          className="ml-2 text-gray-400 hover:text-gray-600"
                           onClick={() => removeTag(tag)}
                         >
-                          <X size={12} />
+                          <X size={14} />
                         </button>
                       </span>
                     ))}
@@ -317,8 +317,8 @@ const TaskForm: React.FC<TaskFormProps> = ({
               </div>
               
               {/* Tarefa recorrente */}
-              <div className="mt-4">
-                <div className="flex items-center">
+              <div className="mt-6">
+                <div className="flex items-center mb-4">
                   <input
                     id="recurring"
                     type="checkbox"
@@ -332,15 +332,15 @@ const TaskForm: React.FC<TaskFormProps> = ({
                 </div>
                 
                 {isRecurring && (
-                  <div className="mt-3 pl-6 space-y-3">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="pl-6 space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
-                        <label htmlFor="recurrence-type" className="block text-sm font-medium text-gray-700 mb-1">
+                        <label htmlFor="recurrence-type" className="block text-sm font-medium text-gray-700 mb-2">
                           Frequência
                         </label>
                         <select
                           id="recurrence-type"
-                          className="w-full rounded-md border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                          className="w-full px-4 py-3 rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                           value={recurrenceType}
                           onChange={(e) => setRecurrenceType(e.target.value as any)}
                         >
@@ -351,7 +351,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
                         </select>
                       </div>
                       <div>
-                        <label htmlFor="interval" className="block text-sm font-medium text-gray-700 mb-1">
+                        <label htmlFor="interval" className="block text-sm font-medium text-gray-700 mb-2">
                           A cada
                         </label>
                         <div className="flex items-center">
@@ -359,11 +359,11 @@ const TaskForm: React.FC<TaskFormProps> = ({
                             id="interval"
                             type="number"
                             min="1"
-                            className="w-full rounded-md border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                            className="w-full px-4 py-3 rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                             value={interval}
                             onChange={(e) => setInterval(parseInt(e.target.value) || 1)}
                           />
-                          <span className="ml-2 text-sm text-gray-500">
+                          <span className="ml-3 text-sm text-gray-600">
                             {recurrenceType === 'diária' && (interval > 1 ? 'dias' : 'dia')}
                             {recurrenceType === 'semanal' && (interval > 1 ? 'semanas' : 'semana')}
                             {recurrenceType === 'mensal' && (interval > 1 ? 'meses' : 'mês')}
@@ -378,17 +378,17 @@ const TaskForm: React.FC<TaskFormProps> = ({
             </>
           )}
           
-          <div className="flex justify-end pt-4 space-x-2">
+          <div className="flex justify-end pt-6 space-x-3">
             <button
               type="button"
-              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50"
+              className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 font-medium"
               onClick={onClose}
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
             >
               {taskId ? 'Salvar Alterações' : isSubtask ? 'Criar Subtarefa' : 'Criar Tarefa'}
             </button>
