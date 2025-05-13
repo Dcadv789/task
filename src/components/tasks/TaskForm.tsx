@@ -6,12 +6,14 @@ interface TaskFormProps {
   onClose: () => void;
   preselectedListId?: string | null;
   preselectedClientId?: string | null;
+  isSubtask?: boolean;
 }
 
 const TaskForm: React.FC<TaskFormProps> = ({ 
   onClose, 
   preselectedListId, 
-  preselectedClientId 
+  preselectedClientId,
+  isSubtask = false
 }) => {
   const { lists, clients, addTask } = useAppContext();
   
@@ -19,6 +21,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
   const [description, setDescription] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [priority, setPriority] = useState<'baixa' | 'média' | 'alta'>('média');
+  const [status, setStatus] = useState<'em_aberto' | 'em_andamento' | 'concluido' | 'nao_feito'>('em_aberto');
   const [selectedListId, setSelectedListId] = useState(preselectedListId || lists[0]?.id || '');
   const [selectedClientId, setSelectedClientId] = useState(preselectedClientId || '');
   const [newTag, setNewTag] = useState('');
@@ -35,8 +38,9 @@ const TaskForm: React.FC<TaskFormProps> = ({
     addTask({
       title,
       description,
-      completed: false,
+      completed: status === 'concluido',
       priority,
+      status,
       dueDate: dueDate ? new Date(dueDate).toISOString() : null,
       clientId: selectedClientId || null,
       listId: selectedListId,
@@ -69,11 +73,20 @@ const TaskForm: React.FC<TaskFormProps> = ({
   const removeTag = (tagToRemove: string) => {
     setTags(tags.filter(tag => tag !== tagToRemove));
   };
+
+  const statusOptions = {
+    'em_aberto': 'Em Aberto',
+    'em_andamento': 'Em Andamento',
+    'concluido': 'Concluído',
+    'nao_feito': 'Não Feito'
+  };
   
   return (
     <div className="bg-white border rounded-lg shadow-sm">
       <div className="p-4 border-b border-gray-200 flex justify-between items-center">
-        <h2 className="text-lg font-medium text-gray-800">Nova Tarefa</h2>
+        <h2 className="text-lg font-medium text-gray-800">
+          {isSubtask ? 'Nova Subtarefa' : 'Nova Tarefa'}
+        </h2>
         <button
           className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100"
           onClick={onClose}
@@ -116,8 +129,8 @@ const TaskForm: React.FC<TaskFormProps> = ({
             />
           </div>
           
-          {/* Linha 1: Data e Prioridade */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Linha 1: Data, Prioridade e Status */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Data de vencimento */}
             <div>
               <label htmlFor="dueDate" className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
@@ -148,6 +161,24 @@ const TaskForm: React.FC<TaskFormProps> = ({
                 <option value="baixa">Baixa</option>
                 <option value="média">Média</option>
                 <option value="alta">Alta</option>
+              </select>
+            </div>
+
+            {/* Status */}
+            <div>
+              <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                <Clock size={14} className="mr-1" />
+                Status
+              </label>
+              <select
+                id="status"
+                className="w-full rounded-md border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                value={status}
+                onChange={(e) => setStatus(e.target.value as 'em_aberto' | 'em_andamento' | 'concluido' | 'nao_feito')}
+              >
+                {Object.entries(statusOptions).map(([value, label]) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
               </select>
             </div>
           </div>
@@ -240,64 +271,66 @@ const TaskForm: React.FC<TaskFormProps> = ({
           </div>
           
           {/* Tarefa recorrente */}
-          <div className="mt-4">
-            <div className="flex items-center">
-              <input
-                id="recurring"
-                type="checkbox"
-                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                checked={isRecurring}
-                onChange={() => setIsRecurring(!isRecurring)}
-              />
-              <label htmlFor="recurring" className="ml-2 block text-sm text-gray-700">
-                Tarefa recorrente
-              </label>
-            </div>
-            
-            {isRecurring && (
-              <div className="mt-3 pl-6 space-y-3">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label htmlFor="recurrence-type" className="block text-sm font-medium text-gray-700 mb-1">
-                      Frequência
-                    </label>
-                    <select
-                      id="recurrence-type"
-                      className="w-full rounded-md border-gray-200 focus:border-blue-500 focus:ring-blue-500"
-                      value={recurrenceType}
-                      onChange={(e) => setRecurrenceType(e.target.value as any)}
-                    >
-                      <option value="diária">Diária</option>
-                      <option value="semanal">Semanal</option>
-                      <option value="mensal">Mensal</option>
-                      <option value="anual">Anual</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label htmlFor="interval" className="block text-sm font-medium text-gray-700 mb-1">
-                      A cada
-                    </label>
-                    <div className="flex items-center">
-                      <input
-                        id="interval"
-                        type="number"
-                        min="1"
+          {!isSubtask && (
+            <div className="mt-4">
+              <div className="flex items-center">
+                <input
+                  id="recurring"
+                  type="checkbox"
+                  className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  checked={isRecurring}
+                  onChange={() => setIsRecurring(!isRecurring)}
+                />
+                <label htmlFor="recurring" className="ml-2 block text-sm text-gray-700">
+                  Tarefa recorrente
+                </label>
+              </div>
+              
+              {isRecurring && (
+                <div className="mt-3 pl-6 space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="recurrence-type" className="block text-sm font-medium text-gray-700 mb-1">
+                        Frequência
+                      </label>
+                      <select
+                        id="recurrence-type"
                         className="w-full rounded-md border-gray-200 focus:border-blue-500 focus:ring-blue-500"
-                        value={interval}
-                        onChange={(e) => setInterval(parseInt(e.target.value) || 1)}
-                      />
-                      <span className="ml-2 text-sm text-gray-500">
-                        {recurrenceType === 'diária' && (interval > 1 ? 'dias' : 'dia')}
-                        {recurrenceType === 'semanal' && (interval > 1 ? 'semanas' : 'semana')}
-                        {recurrenceType === 'mensal' && (interval > 1 ? 'meses' : 'mês')}
-                        {recurrenceType === 'anual' && (interval > 1 ? 'anos' : 'ano')}
-                      </span>
+                        value={recurrenceType}
+                        onChange={(e) => setRecurrenceType(e.target.value as any)}
+                      >
+                        <option value="diária">Diária</option>
+                        <option value="semanal">Semanal</option>
+                        <option value="mensal">Mensal</option>
+                        <option value="anual">Anual</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label htmlFor="interval" className="block text-sm font-medium text-gray-700 mb-1">
+                        A cada
+                      </label>
+                      <div className="flex items-center">
+                        <input
+                          id="interval"
+                          type="number"
+                          min="1"
+                          className="w-full rounded-md border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                          value={interval}
+                          onChange={(e) => setInterval(parseInt(e.target.value) || 1)}
+                        />
+                        <span className="ml-2 text-sm text-gray-500">
+                          {recurrenceType === 'diária' && (interval > 1 ? 'dias' : 'dia')}
+                          {recurrenceType === 'semanal' && (interval > 1 ? 'semanas' : 'semana')}
+                          {recurrenceType === 'mensal' && (interval > 1 ? 'meses' : 'mês')}
+                          {recurrenceType === 'anual' && (interval > 1 ? 'anos' : 'ano')}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
           
           <div className="flex justify-end pt-4 space-x-2">
             <button
@@ -311,7 +344,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
               type="submit"
               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
             >
-              Criar Tarefa
+              {isSubtask ? 'Criar Subtarefa' : 'Criar Tarefa'}
             </button>
           </div>
         </div>

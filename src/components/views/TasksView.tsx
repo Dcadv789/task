@@ -4,12 +4,13 @@ import { useAppContext } from '../../context/AppContext';
 import { TaskList, Client, Task } from '../../types';
 import { 
   Plus, 
-  Filter, 
+  Filter,
   ListFilter,
   CheckSquare,
   ClipboardList,
   LayoutGrid,
-  LayoutList
+  LayoutList,
+  X
 } from 'lucide-react';
 import TaskForm from '../tasks/TaskForm';
 
@@ -28,17 +29,28 @@ export const TasksView: React.FC = () => {
   const [filterOptions, setFilterOptions] = useState({
     showCompleted: true,
     priority: 'todas' as 'todas' | 'baixa' | 'média' | 'alta',
+    status: 'todas' as 'todas' | 'em_aberto' | 'em_andamento' | 'concluido' | 'nao_feito',
+    clientId: 'todos' as string | 'todos',
+    listId: 'todas' as string | 'todas',
     sortBy: 'dueDate' as 'dueDate' | 'priority' | 'createdAt'
   });
-  const [showFilters, setShowFilters] = useState(false);
   
   // Filtrar tarefas
   const filteredTasks = tasks.filter(task => {
-    // Filtrar por lista
+    // Filtrar por lista selecionada na sidebar
     if (selectedListId && task.listId !== selectedListId) return false;
     
-    // Filtrar por cliente
+    // Filtrar por cliente selecionado na sidebar
     if (selectedClientId && task.clientId !== selectedClientId) return false;
+    
+    // Filtrar por lista (do filtro)
+    if (filterOptions.listId !== 'todas' && task.listId !== filterOptions.listId) return false;
+    
+    // Filtrar por cliente (do filtro)
+    if (filterOptions.clientId !== 'todos' && task.clientId !== filterOptions.clientId) return false;
+    
+    // Filtrar por status
+    if (filterOptions.status !== 'todas' && task.status !== filterOptions.status) return false;
     
     // Filtrar por status de conclusão
     if (!filterOptions.showCompleted && task.completed) return false;
@@ -59,7 +71,6 @@ export const TasksView: React.FC = () => {
   // Ordenar tarefas
   const sortedTasks = [...filteredTasks].sort((a, b) => {
     if (filterOptions.sortBy === 'dueDate') {
-      // Tarefas sem data ficam por último
       if (!a.dueDate) return 1;
       if (!b.dueDate) return -1;
       return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
@@ -79,6 +90,14 @@ export const TasksView: React.FC = () => {
     if (selectedList) return selectedList.name;
     if (selectedClient) return `Cliente: ${selectedClient.name}`;
     return 'Todas as Tarefas';
+  };
+
+  const statusLabels = {
+    'todas': 'Todos os status',
+    'em_aberto': 'Em Aberto',
+    'em_andamento': 'Em Andamento',
+    'concluido': 'Concluído',
+    'nao_feito': 'Não Feito'
   };
   
   return (
@@ -110,71 +129,6 @@ export const TasksView: React.FC = () => {
             </button>
           </div>
           
-          {/* Filtros */}
-          <div className="relative">
-            <button 
-              className="p-2 border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50"
-              onClick={() => setShowFilters(!showFilters)}
-              aria-label="Filtrar tarefas"
-            >
-              <Filter size={18} />
-            </button>
-            
-            {showFilters && (
-              <div className="absolute right-0 mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-10 p-3">
-                <h3 className="font-medium text-gray-700 mb-2">Filtros</h3>
-                
-                <div className="mb-3">
-                  <label className="flex items-center text-sm text-gray-600">
-                    <input 
-                      type="checkbox" 
-                      className="mr-2 h-4 w-4 rounded border-gray-300"
-                      checked={filterOptions.showCompleted}
-                      onChange={() => setFilterOptions({
-                        ...filterOptions,
-                        showCompleted: !filterOptions.showCompleted
-                      })}
-                    />
-                    Mostrar tarefas concluídas
-                  </label>
-                </div>
-                
-                <div className="mb-3">
-                  <label className="block text-sm text-gray-600 mb-1">Prioridade</label>
-                  <select 
-                    className="w-full rounded-md border-gray-200 text-sm focus:border-blue-500 focus:ring-blue-500"
-                    value={filterOptions.priority}
-                    onChange={(e) => setFilterOptions({
-                      ...filterOptions,
-                      priority: e.target.value as any
-                    })}
-                  >
-                    <option value="todas">Todas as prioridades</option>
-                    <option value="baixa">Baixa</option>
-                    <option value="média">Média</option>
-                    <option value="alta">Alta</option>
-                  </select>
-                </div>
-                
-                <div className="mb-2">
-                  <label className="block text-sm text-gray-600 mb-1">Ordenar por</label>
-                  <select 
-                    className="w-full rounded-md border-gray-200 text-sm focus:border-blue-500 focus:ring-blue-500"
-                    value={filterOptions.sortBy}
-                    onChange={(e) => setFilterOptions({
-                      ...filterOptions,
-                      sortBy: e.target.value as any
-                    })}
-                  >
-                    <option value="dueDate">Data de vencimento</option>
-                    <option value="priority">Prioridade</option>
-                    <option value="createdAt">Data de criação</option>
-                  </select>
-                </div>
-              </div>
-            )}
-          </div>
-          
           {/* Botão Nova Tarefa */}
           <button 
             className="flex items-center px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
@@ -182,6 +136,134 @@ export const TasksView: React.FC = () => {
           >
             <Plus size={18} className="mr-1" />
             <span>Nova Tarefa</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Barra de Filtros */}
+      <div className="mb-6 bg-white border border-gray-200 rounded-lg p-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Status */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Status
+            </label>
+            <select
+              className="w-full rounded-md border-gray-200 text-sm focus:border-blue-500 focus:ring-blue-500"
+              value={filterOptions.status}
+              onChange={(e) => setFilterOptions({
+                ...filterOptions,
+                status: e.target.value as any
+              })}
+            >
+              {Object.entries(statusLabels).map(([value, label]) => (
+                <option key={value} value={value}>{label}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Prioridade */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Prioridade
+            </label>
+            <select
+              className="w-full rounded-md border-gray-200 text-sm focus:border-blue-500 focus:ring-blue-500"
+              value={filterOptions.priority}
+              onChange={(e) => setFilterOptions({
+                ...filterOptions,
+                priority: e.target.value as any
+              })}
+            >
+              <option value="todas">Todas as prioridades</option>
+              <option value="baixa">Baixa</option>
+              <option value="média">Média</option>
+              <option value="alta">Alta</option>
+            </select>
+          </div>
+
+          {/* Lista */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Lista
+            </label>
+            <select
+              className="w-full rounded-md border-gray-200 text-sm focus:border-blue-500 focus:ring-blue-500"
+              value={filterOptions.listId}
+              onChange={(e) => setFilterOptions({
+                ...filterOptions,
+                listId: e.target.value
+              })}
+            >
+              <option value="todas">Todas as listas</option>
+              {lists.map(list => (
+                <option key={list.id} value={list.id}>{list.name}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Cliente */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Cliente
+            </label>
+            <select
+              className="w-full rounded-md border-gray-200 text-sm focus:border-blue-500 focus:ring-blue-500"
+              value={filterOptions.clientId}
+              onChange={(e) => setFilterOptions({
+                ...filterOptions,
+                clientId: e.target.value
+              })}
+            >
+              <option value="todos">Todos os clientes</option>
+              {clients.map(client => (
+                <option key={client.id} value={client.id}>{client.name}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="mt-4 flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <label className="flex items-center text-sm text-gray-600">
+              <input 
+                type="checkbox" 
+                className="mr-2 h-4 w-4 rounded border-gray-300"
+                checked={filterOptions.showCompleted}
+                onChange={() => setFilterOptions({
+                  ...filterOptions,
+                  showCompleted: !filterOptions.showCompleted
+                })}
+              />
+              Mostrar tarefas concluídas
+            </label>
+
+            <select
+              className="rounded-md border-gray-200 text-sm focus:border-blue-500 focus:ring-blue-500"
+              value={filterOptions.sortBy}
+              onChange={(e) => setFilterOptions({
+                ...filterOptions,
+                sortBy: e.target.value as any
+              })}
+            >
+              <option value="dueDate">Ordenar por data</option>
+              <option value="priority">Ordenar por prioridade</option>
+              <option value="createdAt">Ordenar por criação</option>
+            </select>
+          </div>
+
+          <button
+            className="text-sm text-blue-600 hover:text-blue-800"
+            onClick={() => setFilterOptions({
+              showCompleted: true,
+              priority: 'todas',
+              status: 'todas',
+              clientId: 'todos',
+              listId: 'todas',
+              sortBy: 'dueDate'
+            })}
+          >
+            Limpar filtros
           </button>
         </div>
       </div>
