@@ -50,7 +50,12 @@ export const useAppContext = () => {
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const mockData = generateMockData();
   
-  const [tasks, setTasks] = useState<Task[]>(mockData.tasks);
+  // Carregar dados do localStorage ou usar dados mockados
+  const [tasks, setTasks] = useState<Task[]>(() => {
+    const savedTasks = localStorage.getItem('tasks');
+    return savedTasks ? JSON.parse(savedTasks) : mockData.tasks;
+  });
+
   const [lists, setLists] = useState<TaskList[]>(mockData.lists);
   const [clients, setClients] = useState<Client[]>(mockData.clients);
   const [notes, setNotes] = useState<Note[]>(mockData.notes);
@@ -64,6 +69,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const saved = localStorage.getItem('darkMode');
     return saved ? JSON.parse(saved) : false;
   });
+
+  // Salvar tarefas no localStorage quando houver alterações
+  useEffect(() => {
+    localStorage.setItem('tasks', JSON.stringify(tasks));
+  }, [tasks]);
 
   // Verificar lembretes a cada minuto
   useEffect(() => {
@@ -129,7 +139,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       status: task.status || 'em_aberto',
       statusChangedAt: task.status === 'em_andamento' ? new Date().toISOString() : null,
       observations: [],
-      reminders: []
+      reminders: [],
+      subtasks: task.subtasks || []
     };
     setTasks((prev) => [...prev, newTask]);
   };

@@ -5,7 +5,7 @@ export interface Task {
   completed: boolean;
   priority: 'baixa' | 'média' | 'alta';
   status: 'em_aberto' | 'em_andamento' | 'concluido' | 'nao_feito';
-  statusChangedAt: string | null; // Nova propriedade
+  statusChangedAt: string | null;
   dueDate: string | null;
   createdAt: string;
   clientIds: string[];
@@ -14,8 +14,9 @@ export interface Task {
   parentId: string | null;
   recurrence: Recurrence | null;
   tags: string[];
-  observations: Observation[]; // Nova propriedade
-  reminders: Reminder[]; // Nova propriedade
+  observations: Observation[];
+  reminders: Reminder[];
+  subtasks: Subtask[];
 }
 
 export interface Observation {
@@ -27,7 +28,7 @@ export interface Observation {
 
 export interface Reminder {
   id: string;
-  time: number; // Quantidade de tempo antes do vencimento
+  time: number;
   unit: 'minutos' | 'horas' | 'dias';
   notified: boolean;
 }
@@ -42,28 +43,10 @@ export interface Notification {
   taskId: string;
 }
 
-export interface Task {
-  id: string;
-  title: string;
-  description: string;
-  completed: boolean;
-  priority: 'baixa' | 'média' | 'alta';
-  status: 'em_aberto' | 'em_andamento' | 'concluido' | 'nao_feito';
-  dueDate: string | null;
-  createdAt: string;
-  clientIds: string[];
-  completedClientIds: string[];
-  listId: string;
-  parentId: string | null;
-  recurrence: Recurrence | null;
-  tags: string[];
-}
-
 export interface Subtask {
   id: string;
   title: string;
   completed: boolean;
-  taskId: string;
 }
 
 export interface TaskList {

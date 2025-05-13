@@ -78,7 +78,11 @@ const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
   return (
     <>
       <div className={`bg-white rounded-lg shadow-sm border overflow-hidden transition-all duration-200 mb-4 ${
-        task.completed ? 'border-green-200' : task.status === 'nao_feito' ? 'border-red-200' : 'border-gray-200 hover:border-blue-200'
+        task.status === 'nao_feito' 
+          ? 'border-red-200 bg-red-50'
+          : task.completed 
+            ? 'border-green-200' 
+            : 'border-gray-200 hover:border-blue-200'
       }`}>
         <div className="p-6">
           <div className="flex items-start justify-between">
@@ -89,11 +93,14 @@ const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
                   task.status === 'concluido'
                     ? 'text-green-500 hover:bg-green-50'
                     : task.status === 'nao_feito'
-                    ? 'text-red-500 hover:bg-red-50'
-                    : 'text-gray-400 hover:bg-gray-50'
+                      ? 'text-red-500 hover:bg-red-50'
+                      : 'text-gray-400 hover:bg-gray-50'
                 }`}
               >
-                {task.status === 'concluido' ? <CheckCircle2 size={22} /> : <Circle size={22} />}
+                {task.status === 'concluido' || task.status === 'nao_feito' 
+                  ? <CheckCircle2 size={22} /> 
+                  : <Circle size={22} />
+                }
               </button>
               
               <div className="space-y-3">
@@ -120,9 +127,10 @@ const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
 
                   {/* Subtarefas */}
                   {task.subtasks && task.subtasks.length > 0 && (
-                    <div className="mt-3 space-y-2">
+                    <div className="mt-4 space-y-2 border-t border-gray-100 pt-4">
+                      <h4 className="text-sm font-medium text-gray-700">Subtarefas</h4>
                       {task.subtasks.map(subtask => (
-                        <div key={subtask.id} className="flex items-center space-x-2 pl-4 text-sm">
+                        <div key={subtask.id} className="flex items-center space-x-2">
                           <button
                             onClick={() => handleSubtaskStatusChange(subtask.id, !subtask.completed)}
                             className={`p-1 rounded-md ${
@@ -131,7 +139,9 @@ const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
                           >
                             {subtask.completed ? <CheckCircle2 size={16} /> : <Circle size={16} />}
                           </button>
-                          <span className={subtask.completed ? 'line-through text-gray-400' : 'text-gray-600'}>
+                          <span className={`text-sm ${
+                            subtask.completed ? 'line-through text-gray-400' : 'text-gray-600'
+                          }`}>
                             {subtask.title}
                           </span>
                         </div>

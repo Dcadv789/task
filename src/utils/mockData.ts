@@ -52,6 +52,7 @@ export const generateMockData = () => {
       completed: false,
       priority: 'alta',
       status: 'em_aberto',
+      statusChangedAt: null,
       dueDate: new Date().toISOString(),
       createdAt: new Date().toISOString(),
       clientIds: ['client-1'],
@@ -60,6 +61,20 @@ export const generateMockData = () => {
       parentId: null,
       recurrence: null,
       tags: ['apresentação', 'reunião'],
+      observations: [],
+      reminders: [],
+      subtasks: [
+        {
+          id: 'subtask-1',
+          title: 'Preparar gráficos de desempenho',
+          completed: false
+        },
+        {
+          id: 'subtask-2',
+          title: 'Revisar números com a equipe',
+          completed: true
+        }
+      ]
     },
     {
       id: 'task-2',
@@ -68,6 +83,7 @@ export const generateMockData = () => {
       completed: false,
       priority: 'média',
       status: 'em_aberto',
+      statusChangedAt: null,
       dueDate: new Date(Date.now() + 2 * 86400000).toISOString(),
       createdAt: new Date().toISOString(),
       clientIds: [],
@@ -81,6 +97,15 @@ export const generateMockData = () => {
         daysOfWeek: [6],
       },
       tags: ['pessoal', 'compras'],
+      observations: [],
+      reminders: [],
+      subtasks: [
+        {
+          id: 'subtask-3',
+          title: 'Fazer lista de compras',
+          completed: false
+        }
+      ]
     },
     {
       id: 'task-3',
@@ -89,6 +114,7 @@ export const generateMockData = () => {
       completed: false,
       priority: 'alta',
       status: 'em_aberto',
+      statusChangedAt: null,
       dueDate: new Date(Date.now() + 1 * 86400000).toISOString(),
       createdAt: new Date().toISOString(),
       clientIds: ['client-1', 'client-2'],
@@ -97,6 +123,9 @@ export const generateMockData = () => {
       parentId: null,
       recurrence: null,
       tags: ['proposta', 'cliente'],
+      observations: [],
+      reminders: [],
+      subtasks: []
     },
   ];
 
