@@ -37,7 +37,8 @@ const TaskModal: React.FC<TaskModalProps> = ({
   const [isRecurring, setIsRecurring] = useState(false);
   const [recurrenceType, setRecurrenceType] = useState<'diária' | 'semanal' | 'mensal' | 'anual'>('semanal');
   const [interval, setInterval] = useState(1);
-  const [selectedDays, setSelectedDays] = useState<number[]>([]);
+  const [selectedDays, setSelectedDays] = useState<number[]>([1, 2, 3, 4, 5]);
+  const [excludeWeekends, setExcludeWeekends] = useState(true);
   const [dayOfMonth, setDayOfMonth] = useState(1);
   const [monthOfYear, setMonthOfYear] = useState(1);
   
@@ -58,6 +59,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
         setInterval(task.recurrence.interval);
         if (task.recurrence.daysOfWeek) {
           setSelectedDays(task.recurrence.daysOfWeek);
+          setExcludeWeekends(!task.recurrence.daysOfWeek.includes(0) && !task.recurrence.daysOfWeek.includes(6));
         }
         if (task.recurrence.dayOfMonth) {
           setDayOfMonth(task.recurrence.dayOfMonth);
@@ -68,6 +70,17 @@ const TaskModal: React.FC<TaskModalProps> = ({
       }
     }
   }, [task]);
+
+  // Efeito para atualizar os dias selecionados quando o checkbox de finais de semana muda
+  useEffect(() => {
+    if (recurrenceType === 'diária') {
+      if (excludeWeekends) {
+        setSelectedDays([1, 2, 3, 4, 5]); // Apenas dias úteis
+      } else {
+        setSelectedDays([0, 1, 2, 3, 4, 5, 6]); // Todos os dias
+      }
+    }
+  }, [excludeWeekends, recurrenceType]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -89,7 +102,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
       type: recurrenceType,
       interval,
       endDate: null,
-      daysOfWeek: recurrenceType === 'semanal' || (recurrenceType === 'diária' && selectedDays.length > 0) 
+      daysOfWeek: recurrenceType === 'semanal' || recurrenceType === 'diária'
         ? selectedDays 
         : undefined,
       dayOfMonth: recurrenceType === 'mensal' ? dayOfMonth : undefined,
@@ -453,16 +466,8 @@ const TaskModal: React.FC<TaskModalProps> = ({
                         <input
                           type="checkbox"
                           className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                          checked={!selectedDays.includes(0) && !selectedDays.includes(6)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              // Remover sábado e domingo
-                              setSelectedDays([1, 2, 3, 4, 5]);
-                            } else {
-                              // Incluir todos os dias
-                              setSelectedDays([]);
-                            }
-                          }}
+                          checked={excludeWeekends}
+                          onChange={(e) => setExcludeWeekends(e.target.checked)}
                         />
                         <span className="text-sm text-gray-700">Excluir finais de semana</span>
                       </label>
