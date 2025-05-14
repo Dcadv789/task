@@ -336,7 +336,7 @@ export const TasksView: React.FC = () => {
 
         <div className="flex items-center space-x-4">
           <select
-            className="px-3 py-1.5 rounded-lg border border-gray-200 text-sm focus:border-blue-500 focus:ring-blue-500"
+            className="px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-700 text-sm focus:border-blue-500 focus:ring-blue-500 cursor-pointer hover:border-gray-400 transition-colors"
             value={filterOptions.sortBy}
             onChange={(e) => setFilterOptions({
               ...filterOptions,
@@ -371,15 +371,15 @@ export const TasksView: React.FC = () => {
 
       {/* Painel de Filtros Expandido */}
       {showFilters && (
-        <div className="mb-6 bg-white rounded-lg border border-gray-200 p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="mb-6 bg-white rounded-lg border border-gray-200 p-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {/* Status */}
-            <div className="space-y-2">
+            <div className="space-y-3">
               <label className="block text-sm font-medium text-gray-700">
                 Status
               </label>
               <select
-                className="w-full rounded-lg border-gray-200 text-sm focus:border-blue-500 focus:ring-blue-500"
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-700 text-sm focus:border-blue-500 focus:ring-blue-500 cursor-pointer hover:border-gray-400 transition-colors"
                 value={filterOptions.status}
                 onChange={(e) => setFilterOptions({
                   ...filterOptions,
@@ -393,12 +393,12 @@ export const TasksView: React.FC = () => {
             </div>
 
             {/* Prioridade */}
-            <div className="space-y-2">
+            <div className="space-y-3">
               <label className="block text-sm font-medium text-gray-700">
                 Prioridade
               </label>
               <select
-                className="w-full rounded-lg border-gray-200 text-sm focus:border-blue-500 focus:ring-blue-500"
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-700 text-sm focus:border-blue-500 focus:ring-blue-500 cursor-pointer hover:border-gray-400 transition-colors"
                 value={filterOptions.priority}
                 onChange={(e) => setFilterOptions({
                   ...filterOptions,
@@ -413,12 +413,12 @@ export const TasksView: React.FC = () => {
             </div>
 
             {/* Lista */}
-            <div className="space-y-2">
+            <div className="space-y-3">
               <label className="block text-sm font-medium text-gray-700">
                 Lista
               </label>
               <select
-                className="w-full rounded-lg border-gray-200 text-sm focus:border-blue-500 focus:ring-blue-500"
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-700 text-sm focus:border-blue-500 focus:ring-blue-500 cursor-pointer hover:border-gray-400 transition-colors"
                 value={filterOptions.listId}
                 onChange={(e) => setFilterOptions({
                   ...filterOptions,
@@ -433,12 +433,12 @@ export const TasksView: React.FC = () => {
             </div>
 
             {/* Cliente */}
-            <div className="space-y-2">
+            <div className="space-y-3">
               <label className="block text-sm font-medium text-gray-700">
                 Cliente
               </label>
               <select
-                className="w-full rounded-lg border-gray-200 text-sm focus:border-blue-500 focus:ring-blue-500"
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-700 text-sm focus:border-blue-500 focus:ring-blue-500 cursor-pointer hover:border-gray-400 transition-colors"
                 value={filterOptions.clientId}
                 onChange={(e) => setFilterOptions({
                   ...filterOptions,
@@ -454,15 +454,15 @@ export const TasksView: React.FC = () => {
           </div>
 
           {/* Filtros de Data */}
-          <div className="mt-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+          <div className="mt-8 space-y-3">
+            <label className="block text-sm font-medium text-gray-700">
               Intervalo de Datas Específico
             </label>
             <div className="flex items-center space-x-4">
               <div className="flex-1">
                 <input
                   type="date"
-                  className="w-full rounded-lg border-gray-200 text-sm focus:border-blue-500 focus:ring-blue-500"
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-700 text-sm focus:border-blue-500 focus:ring-blue-500 cursor-pointer hover:border-gray-400 transition-colors"
                   value={filterOptions.startDate}
                   onChange={(e) => setFilterOptions({
                     ...filterOptions,
@@ -472,11 +472,11 @@ export const TasksView: React.FC = () => {
                   })}
                 />
               </div>
-              <span className="text-gray-500">até</span>
+              <span className="text-gray-500 font-medium">até</span>
               <div className="flex-1">
                 <input
                   type="date"
-                  className="w-full rounded-lg border-gray-200 text-sm focus:border-blue-500 focus:ring-blue-500"
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-700 text-sm focus:border-blue-500 focus:ring-blue-500 cursor-pointer hover:border-gray-400 transition-colors"
                   value={filterOptions.endDate}
                   min={filterOptions.startDate}
                   onChange={(e) => setFilterOptions({
@@ -490,11 +490,11 @@ export const TasksView: React.FC = () => {
           </div>
 
           {/* Opções Adicionais */}
-          <div className="mt-6 flex items-center">
-            <label className="flex items-center text-sm text-gray-600">
+          <div className="mt-8 flex items-center">
+            <label className="flex items-center text-sm text-gray-700 cursor-pointer">
               <input 
                 type="checkbox" 
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 mr-2"
+                className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 mr-3"
                 checked={filterOptions.showCompleted}
                 onChange={() => setFilterOptions({
                   ...filterOptions,
