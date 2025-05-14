@@ -11,7 +11,8 @@ import {
   Folder, 
   Hash,
   Users,
-  LayoutDashboard
+  LayoutDashboard,
+  RefreshCw
 } from 'lucide-react';
 
 const iconsMap: Record<string, React.ReactNode> = {
@@ -80,6 +81,22 @@ export const Sidebar: React.FC = () => {
             >
               <CheckSquare size={18} className="mr-2" />
               <span>Todas as Tarefas</span>
+            </button>
+            
+            <button 
+              className={`flex items-center w-full p-2 rounded-lg text-left ${
+                activeView === 'recorrentes'
+                  ? 'bg-blue-50 text-blue-600'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+              onClick={() => {
+                setActiveView('recorrentes');
+                setSelectedListId(null);
+                setSelectedClientId(null);
+              }}
+            >
+              <RefreshCw size={18} className="mr-2" />
+              <span>Tarefas Recorrentes</span>
             </button>
             
             <button 

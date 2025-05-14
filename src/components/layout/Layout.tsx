@@ -6,6 +6,7 @@ import TasksView from '../views/TasksView';
 import CalendarView from '../views/CalendarView';
 import NotesView from '../views/NotesView';
 import DashboardView from '../views/DashboardView';
+import RecurringTasksView from '../views/RecurringTasksView';
 
 export const Layout: React.FC = () => {
   const { activeView } = useAppContext();
@@ -20,6 +21,8 @@ export const Layout: React.FC = () => {
         return <CalendarView />;
       case 'notas':
         return <NotesView />;
+      case 'recorrentes':
+        return <RecurringTasksView />;
       default:
         return <DashboardView />;
     }
@@ -38,4 +41,4 @@ export const Layout: React.FC = () => {
   );
 };
 
-export default Layout
+export default Layout;

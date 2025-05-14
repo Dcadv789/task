@@ -6,7 +6,7 @@ import TaskFilters from '../tasks/TaskFilters';
 import TaskList from '../tasks/TaskList';
 import EmptyTaskState from '../tasks/EmptyTaskState';
 import TaskModal from '../tasks/TaskModal';
-import { adjustTimezone } from '../../utils/dateUtils';
+import { adjustTimezone, isSameDay } from '../../utils/dateUtils';
 
 export const TasksView: React.FC = () => {
   const { 
@@ -95,7 +95,7 @@ export const TasksView: React.FC = () => {
   const taskOccursInRange = (task: Task, startDate: Date, endDate: Date): boolean => {
     if (!task.dueDate) return false;
 
-    const taskDate = new Date(task.dueDate);
+    const taskDate = adjustTimezone(new Date(task.dueDate));
     
     // Para tarefas não recorrentes
     if (!task.recurrence) {
@@ -132,22 +132,24 @@ export const TasksView: React.FC = () => {
     
     // Filtrar por intervalo de datas específico
     if (filterOptions.startDate && filterOptions.endDate) {
-      const startDate = new Date(filterOptions.startDate);
+      const startDate = adjustTimezone(new Date(filterOptions.startDate));
       startDate.setHours(0, 0, 0, 0);
-      const endDate = new Date(filterOptions.endDate);
+      const endDate = adjustTimezone(new Date(filterOptions.endDate));
       endDate.setHours(23, 59, 59, 999);
       return taskOccursInRange(task, startDate, endDate);
     }
     
     // Filtrar por intervalo predefinido
     if (filterOptions.dateRange) {
-      const today = new Date();
+      const today = adjustTimezone(new Date());
       today.setHours(0, 0, 0, 0);
 
       if (filterOptions.dateRange === 'hoje') {
         const endOfDay = new Date(today);
         endOfDay.setHours(23, 59, 59, 999);
-        return taskOccursInRange(task, today, endOfDay);
+        if (!task.dueDate) return false;
+        const taskDate = adjustTimezone(new Date(task.dueDate));
+        return isSameDay(taskDate, today);
       }
 
       if (filterOptions.dateRange === 'semana') {

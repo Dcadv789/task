@@ -9,13 +9,13 @@ interface AppContextType {
   notes: Note[];
   notifications: Notification[];
   currentUser: User;
-  activeView: 'dashboard' | 'tarefas' | 'calendario' | 'notas';
+  activeView: 'dashboard' | 'tarefas' | 'calendario' | 'notas' | 'recorrentes';
   selectedListId: string | null;
   selectedClientId: string | null;
   searchQuery: string;
   darkMode: boolean;
   setDarkMode: (mode: boolean) => void;
-  setActiveView: (view: 'dashboard' | 'tarefas' | 'calendario' | 'notas') => void;
+  setActiveView: (view: 'dashboard' | 'tarefas' | 'calendario' | 'notas' | 'recorrentes') => void;
   setSelectedListId: (id: string | null) => void;
   setSelectedClientId: (id: string | null) => void;
   setSearchQuery: (query: string) => void;
@@ -50,7 +50,6 @@ export const useAppContext = () => {
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const mockData = generateMockData();
   
-  // Carregar dados do localStorage ou usar dados mockados
   const [tasks, setTasks] = useState<Task[]>(() => {
     const savedTasks = localStorage.getItem('tasks');
     return savedTasks ? JSON.parse(savedTasks) : mockData.tasks;
@@ -61,7 +60,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [notes, setNotes] = useState<Note[]>(mockData.notes);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [currentUser] = useState<User>(mockData.user);
-  const [activeView, setActiveView] = useState<'dashboard' | 'tarefas' | 'calendario' | 'notas'>('dashboard');
+  const [activeView, setActiveView] = useState<'dashboard' | 'tarefas' | 'calendario' | 'notas' | 'recorrentes'>('dashboard');
   const [selectedListId, setSelectedListId] = useState<string | null>(null);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -70,12 +69,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return saved ? JSON.parse(saved) : false;
   });
 
-  // Salvar tarefas no localStorage quando houver alterações
   useEffect(() => {
     localStorage.setItem('tasks', JSON.stringify(tasks));
   }, [tasks]);
 
-  // Verificar lembretes a cada minuto
   useEffect(() => {
     const checkReminders = () => {
       const now = new Date();
@@ -103,7 +100,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           }
           
           if (now >= reminderTime) {
-            // Criar notificação
             const notification: Notification = {
               id: `notification-${Date.now()}`,
               type: 'reminder',
@@ -116,7 +112,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             
             setNotifications(prev => [...prev, notification]);
             
-            // Marcar lembrete como notificado
             updateTask(task.id, {
               reminders: task.reminders?.map(r => 
                 r.id === reminder.id ? { ...r, notified: true } : r
@@ -127,7 +122,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       });
     };
     
-    const interval = setInterval(checkReminders, 60000); // Verificar a cada minuto
+    const interval = setInterval(checkReminders, 60000);
     return () => clearInterval(interval);
   }, [tasks]);
 
@@ -140,7 +135,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       statusChangedAt: task.status === 'em_andamento' ? new Date().toISOString() : null,
       observations: [],
       reminders: [],
-      subtasks: task.subtasks || []
+      subtasks: task.subtasks || [],
+      completedDates: []
     };
     setTasks((prev) => [...prev, newTask]);
   };
@@ -150,20 +146,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       prev.map((task) => {
         if (task.id !== taskId) return task;
         
+        // Se o status está mudando para 'concluido', adicionar a data atual ao completedDates
+        const completedDates = updates.status === 'concluido' 
+          ? [...(task.completedDates || []), new Date().toISOString()]
+          : task.completedDates;
+        
         // Se o status está mudando para 'em_andamento', atualizar statusChangedAt
         const statusChangedAt = updates.status === 'em_andamento' && task.status !== 'em_andamento'
           ? new Date().toISOString()
           : task.statusChangedAt;
         
-        return { ...task, ...updates, statusChangedAt };
+        return { ...task, ...updates, statusChangedAt, completedDates };
       })
     );
   };
 
   const deleteTask = (taskId: string) => {
     setTasks(prev => prev.filter(task => task.id !== taskId));
-    
-    // Remove any notifications related to this task
     setNotifications(prev => prev.filter(notification => notification.taskId !== taskId));
   };
 
@@ -172,8 +171,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       task.id === taskId
         ? { 
             ...task, 
-            status: task.status === 'concluida' ? 'em_aberto' : 'concluida',
-            completedAt: task.status === 'concluida' ? null : new Date().toISOString()
+            status: task.status === 'concluido' ? 'em_aberto' : 'concluido',
+            completedDates: task.status !== 'concluido' 
+              ? [...(task.completedDates || []), new Date().toISOString()]
+              : task.completedDates
           }
         : task
     ));
@@ -193,7 +194,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         : task
     ));
     
-    // Criar notificação
     const task = tasks.find(t => t.id === taskId);
     if (task) {
       const notification: Notification = {
@@ -249,7 +249,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const deleteList = (listId: string) => {
     setLists(prev => prev.filter(list => list.id !== listId));
-    // Update tasks that were in this list
     setTasks(prev => prev.map(task =>
       task.listId === listId ? { ...task, listId: null } : task
     ));
@@ -294,7 +293,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const deleteClient = (clientId: string) => {
     setClients(prev => prev.filter(client => client.id !== clientId));
-    // Update tasks associated with this client
     setTasks(prev => prev.map(task =>
       task.clientId === clientId ? { ...task, clientId: null } : task
     ));

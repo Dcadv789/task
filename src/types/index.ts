@@ -17,6 +17,7 @@ export interface Task {
   observations: Observation[];
   reminders: Reminder[];
   subtasks: Subtask[];
+  completedDates?: string[]; // Nova propriedade para armazenar datas de conclusão
 }
 
 export interface Observation {
