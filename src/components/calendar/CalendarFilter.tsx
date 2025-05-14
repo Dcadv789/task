@@ -7,9 +7,11 @@ interface CalendarFilterProps {
   currentView: 'month' | 'week' | 'day';
   selectedClientId: string | null;
   clients: Client[];
+  recurrenceFilter: 'all' | 'recurring' | 'non-recurring';
   onDateChange: (date: Date) => void;
   onViewChange: (view: 'month' | 'week' | 'day') => void;
   onClientChange: (clientId: string | null) => void;
+  onRecurrenceFilterChange: (filter: 'all' | 'recurring' | 'non-recurring') => void;
 }
 
 const CalendarFilter: React.FC<CalendarFilterProps> = ({
@@ -17,9 +19,11 @@ const CalendarFilter: React.FC<CalendarFilterProps> = ({
   currentView,
   selectedClientId,
   clients,
+  recurrenceFilter,
   onDateChange,
   onViewChange,
   onClientChange,
+  onRecurrenceFilterChange,
 }) => {
   const [showDatePicker, setShowDatePicker] = useState(false);
 
@@ -149,18 +153,53 @@ const CalendarFilter: React.FC<CalendarFilterProps> = ({
         </div>
       </div>
 
-      <select
-        className="px-3 py-1.5 border border-gray-200 rounded-lg bg-white text-sm"
-        value={selectedClientId || ''}
-        onChange={(e) => onClientChange(e.target.value || null)}
-      >
-        <option value="">Todos os clientes</option>
-        {clients.map(client => (
-          <option key={client.id} value={client.id}>
-            {client.name}
-          </option>
-        ))}
-      </select>
+      <div className="flex items-center space-x-4">
+        <div className="flex space-x-1 border border-gray-200 rounded-lg p-1">
+          <button
+            className={`px-3 py-1.5 rounded-md text-sm font-medium ${
+              recurrenceFilter === 'all'
+                ? 'bg-blue-100 text-blue-700'
+                : 'text-gray-700 hover:bg-gray-50'
+            }`}
+            onClick={() => onRecurrenceFilterChange('all')}
+          >
+            Todas
+          </button>
+          <button
+            className={`px-3 py-1.5 rounded-md text-sm font-medium ${
+              recurrenceFilter === 'recurring'
+                ? 'bg-blue-100 text-blue-700'
+                : 'text-gray-700 hover:bg-gray-50'
+            }`}
+            onClick={() => onRecurrenceFilterChange('recurring')}
+          >
+            Recorrentes
+          </button>
+          <button
+            className={`px-3 py-1.5 rounded-md text-sm font-medium ${
+              recurrenceFilter === 'non-recurring'
+                ? 'bg-blue-100 text-blue-700'
+                : 'text-gray-700 hover:bg-gray-50'
+            }`}
+            onClick={() => onRecurrenceFilterChange('non-recurring')}
+          >
+            Não Recorrentes
+          </button>
+        </div>
+
+        <select
+          className="px-3 py-1.5 border border-gray-200 rounded-lg bg-white text-sm"
+          value={selectedClientId || ''}
+          onChange={(e) => onClientChange(e.target.value || null)}
+        >
+          <option value="">Todos os clientes</option>
+          {clients.map(client => (
+            <option key={client.id} value={client.id}>
+              {client.name}
+            </option>
+          ))}
+        </select>
+      </div>
     </div>
   );
 };

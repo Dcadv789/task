@@ -10,8 +10,85 @@ export const CalendarView: React.FC = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [currentView, setCurrentView] = useState<'month' | 'week' | 'day'>('month');
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const [recurrenceFilter, setRecurrenceFilter] = useState<'all' | 'recurring' | 'non-recurring'>('all');
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   
+  // Função auxiliar para gerar ocorrências de tarefas recorrentes
+  const generateRecurringTaskOccurrences = (task: Task, startDate: Date, endDate: Date): Date[] => {
+    if (!task.recurrence || !task.dueDate) return [];
+
+    const dates: Date[] = [];
+    const taskStartDate = new Date(task.dueDate);
+    let currentDate = new Date(startDate);
+    currentDate.setHours(taskStartDate.getHours(), taskStartDate.getMinutes());
+
+    while (currentDate <= endDate) {
+      const { type, interval, daysOfWeek } = task.recurrence;
+
+      switch (type) {
+        case 'diária':
+          dates.push(new Date(currentDate));
+          currentDate.setDate(currentDate.getDate() + interval);
+          break;
+
+        case 'semanal':
+          if (daysOfWeek && daysOfWeek.includes(currentDate.getDay())) {
+            dates.push(new Date(currentDate));
+          }
+          currentDate.setDate(currentDate.getDate() + 1);
+          break;
+
+        case 'mensal':
+          if (currentDate.getDate() === taskStartDate.getDate()) {
+            dates.push(new Date(currentDate));
+          }
+          currentDate.setDate(currentDate.getDate() + 1);
+          break;
+
+        case 'anual':
+          if (currentDate.getMonth() === taskStartDate.getMonth() && 
+              currentDate.getDate() === taskStartDate.getDate()) {
+            dates.push(new Date(currentDate));
+          }
+          currentDate.setDate(currentDate.getDate() + 1);
+          break;
+      }
+    }
+
+    return dates;
+  };
+
+  // Função para obter todas as tarefas para uma data específica
+  const getTasksForDate = (date: Date) => {
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    return tasks.filter(task => {
+      // Filtrar por cliente se selecionado
+      if (selectedClientId && !task.clientIds.includes(selectedClientId)) return false;
+
+      // Filtrar por recorrência
+      const isRecurring = !!task.recurrence;
+      if (recurrenceFilter === 'recurring' && !isRecurring) return false;
+      if (recurrenceFilter === 'non-recurring' && isRecurring) return false;
+
+      if (!task.dueDate) return false;
+
+      const taskDate = new Date(task.dueDate);
+      
+      // Para tarefas não recorrentes
+      if (!task.recurrence) {
+        return taskDate >= startOfDay && taskDate <= endOfDay;
+      }
+
+      // Para tarefas recorrentes
+      const occurrences = generateRecurringTaskOccurrences(task, startOfDay, endOfDay);
+      return occurrences.length > 0;
+    });
+  };
+
   const getDaysInMonth = (year: number, month: number) => {
     return new Date(year, month + 1, 0).getDate();
   };
@@ -26,21 +103,6 @@ export const CalendarView: React.FC = () => {
   const firstDayOfMonth = getFirstDayOfMonth(year, month);
   
   const weekDays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-  
-  // Filtrar tarefas pela data e cliente
-  const getTasksForDate = (date: Date) => {
-    return tasks.filter(task => {
-      if (!task.dueDate) return false;
-      if (selectedClientId && task.clientId !== selectedClientId) return false;
-      
-      const taskDate = new Date(task.dueDate);
-      return (
-        taskDate.getFullYear() === date.getFullYear() &&
-        taskDate.getMonth() === date.getMonth() &&
-        taskDate.getDate() === date.getDate()
-      );
-    });
-  };
 
   // Obter os dias da semana atual
   const getCurrentWeekDays = () => {
@@ -176,23 +238,6 @@ export const CalendarView: React.FC = () => {
         {weekDays.map((date, index) => {
           const tasksForDay = getTasksForDate(date);
           const isToday = date.toDateString() === today.toDateString();
-
-          if (tasksForDay.length === 0) {
-            return (
-              <div key={index} className="flex flex-col">
-                <div className={`p-3 text-center rounded-lg mb-4 ${
-                  isToday ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-700'
-                }`}>
-                  <div className="text-sm font-medium">
-                    {date.toLocaleDateString('pt-BR', { weekday: 'short' })}
-                  </div>
-                  <div className="text-lg font-semibold">
-                    {date.getDate()}
-                  </div>
-                </div>
-              </div>
-            );
-          }
 
           return (
             <div key={index} className="flex flex-col">
@@ -375,9 +420,11 @@ export const CalendarView: React.FC = () => {
         currentView={currentView}
         selectedClientId={selectedClientId}
         clients={clients}
+        recurrenceFilter={recurrenceFilter}
         onDateChange={setCurrentDate}
         onViewChange={setCurrentView}
         onClientChange={setSelectedClientId}
+        onRecurrenceFilterChange={setRecurrenceFilter}
       />
       
       <div className="flex-1 bg-white rounded-lg border border-gray-200 overflow-hidden">
