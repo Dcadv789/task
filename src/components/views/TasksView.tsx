@@ -11,7 +11,9 @@ import {
   LayoutGrid,
   LayoutList,
   X,
-  Calendar
+  Calendar,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import TaskForm from '../tasks/TaskForm';
 import TaskModal from '../tasks/TaskModal';
@@ -30,6 +32,7 @@ export const TasksView: React.FC = () => {
   const [showNewTaskModal, setShowNewTaskModal] = useState(false);
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
+  const [showFilters, setShowFilters] = useState(true);
   const [filterOptions, setFilterOptions] = useState({
     showCompleted: true,
     priority: 'todas' as 'todas' | 'baixa' | 'média' | 'alta',
@@ -223,10 +226,23 @@ export const TasksView: React.FC = () => {
     setFilterOptions(prev => ({
       ...prev,
       dateRange: prev.dateRange === range ? '' : range,
-      startDate: '', // Limpa o intervalo de datas específico
+      startDate: '',
       endDate: ''
     }));
   };
+
+  const getActiveFiltersCount = () => {
+    let count = 0;
+    if (filterOptions.status !== 'todas') count++;
+    if (filterOptions.priority !== 'todas') count++;
+    if (filterOptions.listId !== 'todas') count++;
+    if (filterOptions.clientId !== 'todos') count++;
+    if (filterOptions.dateRange || (filterOptions.startDate && filterOptions.endDate)) count++;
+    if (!filterOptions.showCompleted) count++;
+    return count;
+  };
+
+  const activeFiltersCount = getActiveFiltersCount();
   
   return (
     <div className="h-full flex flex-col">
@@ -266,181 +282,73 @@ export const TasksView: React.FC = () => {
         </div>
       </div>
 
-      {/* Barra de Filtros */}
-      <div className="mb-6 bg-white border border-gray-200 rounded-lg p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {/* Status */}
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Status
-            </label>
-            <select
-              className="w-full rounded-md border-gray-200 text-sm focus:border-blue-500 focus:ring-blue-500"
-              value={filterOptions.status}
-              onChange={(e) => setFilterOptions({
-                ...filterOptions,
-                status: e.target.value as any
-              })}
-            >
-              {Object.entries(statusLabels).map(([value, label]) => (
-                <option key={value} value={value}>{label}</option>
-              ))}
-            </select>
-          </div>
+      {/* Cabeçalho dos Filtros */}
+      <div className="mb-4 flex items-center justify-between bg-white rounded-lg border border-gray-200 p-4">
+        <div className="flex items-center space-x-4">
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className="flex items-center text-gray-700 hover:text-gray-900"
+          >
+            <Filter size={20} className="mr-2" />
+            <span className="font-medium">Filtros</span>
+            {activeFiltersCount > 0 && (
+              <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-sm">
+                {activeFiltersCount}
+              </span>
+            )}
+            {showFilters ? <ChevronUp size={20} className="ml-2" /> : <ChevronDown size={20} className="ml-2" />}
+          </button>
 
-          {/* Prioridade */}
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Prioridade
-            </label>
-            <select
-              className="w-full rounded-md border-gray-200 text-sm focus:border-blue-500 focus:ring-blue-500"
-              value={filterOptions.priority}
-              onChange={(e) => setFilterOptions({
-                ...filterOptions,
-                priority: e.target.value as any
-              })}
+          {/* Filtros Rápidos */}
+          <div className="flex items-center space-x-2">
+            <button
+              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                filterOptions.dateRange === 'hoje'
+                  ? 'bg-blue-100 text-blue-700'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+              onClick={() => handleDateRangeClick('hoje')}
             >
-              <option value="todas">Todas as prioridades</option>
-              <option value="baixa">Baixa</option>
-              <option value="média">Média</option>
-              <option value="alta">Alta</option>
-            </select>
-          </div>
-
-          {/* Lista */}
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Lista
-            </label>
-            <select
-              className="w-full rounded-md border-gray-200 text-sm focus:border-blue-500 focus:ring-blue-500"
-              value={filterOptions.listId}
-              onChange={(e) => setFilterOptions({
-                ...filterOptions,
-                listId: e.target.value
-              })}
+              Hoje
+            </button>
+            <button
+              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                filterOptions.dateRange === 'semana'
+                  ? 'bg-blue-100 text-blue-700'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+              onClick={() => handleDateRangeClick('semana')}
             >
-              <option value="todas">Todas as listas</option>
-              {lists.map(list => (
-                <option key={list.id} value={list.id}>{list.name}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Cliente */}
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Cliente
-            </label>
-            <select
-              className="w-full rounded-md border-gray-200 text-sm focus:border-blue-500 focus:ring-blue-500"
-              value={filterOptions.clientId}
-              onChange={(e) => setFilterOptions({
-                ...filterOptions,
-                clientId: e.target.value
-              })}
+              Esta Semana
+            </button>
+            <button
+              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                filterOptions.dateRange === 'mes'
+                  ? 'bg-blue-100 text-blue-700'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+              onClick={() => handleDateRangeClick('mes')}
             >
-              <option value="todos">Todos os clientes</option>
-              {clients.map(client => (
-                <option key={client.id} value={client.id}>{client.name}</option>
-              ))}
-            </select>
+              Este Mês
+            </button>
           </div>
         </div>
 
-        {/* Filtros de Data */}
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Intervalo de Datas
-            </label>
-            <div className="flex gap-2">
-              <input
-                type="date"
-                className="flex-1 rounded-md border-gray-200 text-sm focus:border-blue-500 focus:ring-blue-500"
-                value={filterOptions.startDate}
-                onChange={(e) => setFilterOptions({
-                  ...filterOptions,
-                  startDate: e.target.value,
-                  endDate: e.target.value, // Define a data final igual à inicial se estiver vazia
-                  dateRange: '' // Limpa o intervalo predefinido
-                })}
-              />
-              <span className="flex items-center text-gray-500">até</span>
-              <input
-                type="date"
-                className="flex-1 rounded-md border-gray-200 text-sm focus:border-blue-500 focus:ring-blue-500"
-                value={filterOptions.endDate}
-                min={filterOptions.startDate}
-                onChange={(e) => setFilterOptions({
-                  ...filterOptions,
-                  endDate: e.target.value,
-                  dateRange: '' // Limpa o intervalo predefinido
-                })}
-              />
-              <button
-                className={`px-3 py-2 rounded-md text-sm font-medium ${
-                  filterOptions.dateRange === 'hoje'
-                    ? 'bg-blue-50 text-blue-600 border-blue-200'
-                    : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
-                } border`}
-                onClick={() => handleDateRangeClick('hoje')}
-              >
-                Hoje
-              </button>
-              <button
-                className={`px-3 py-2 rounded-md text-sm font-medium ${
-                  filterOptions.dateRange === 'semana'
-                    ? 'bg-blue-50 text-blue-600 border-blue-200'
-                    : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
-                } border`}
-                onClick={() => handleDateRangeClick('semana')}
-              >
-                Esta Semana
-              </button>
-              <button
-                className={`px-3 py-2 rounded-md text-sm font-medium ${
-                  filterOptions.dateRange === 'mes'
-                    ? 'bg-blue-50 text-blue-600 border-blue-200'
-                    : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
-                } border`}
-                onClick={() => handleDateRangeClick('mes')}
-              >
-                Este Mês
-              </button>
-            </div>
-          </div>
+        <div className="flex items-center space-x-4">
+          <select
+            className="px-3 py-1.5 rounded-lg border border-gray-200 text-sm focus:border-blue-500 focus:ring-blue-500"
+            value={filterOptions.sortBy}
+            onChange={(e) => setFilterOptions({
+              ...filterOptions,
+              sortBy: e.target.value as any
+            })}
+          >
+            <option value="dueDate">Ordenar por data</option>
+            <option value="priority">Ordenar por prioridade</option>
+            <option value="createdAt">Ordenar por criação</option>
+          </select>
 
-          <div className="flex items-end justify-between">
-            <div className="flex items-center space-x-6">
-              <label className="flex items-center text-sm text-gray-600">
-                <input 
-                  type="checkbox" 
-                  className="mr-2 h-4 w-4 rounded border-gray-300"
-                  checked={filterOptions.showCompleted}
-                  onChange={() => setFilterOptions({
-                    ...filterOptions,
-                    showCompleted: !filterOptions.showCompleted
-                  })}
-                />
-                Mostrar tarefas concluídas
-              </label>
-
-              <select
-                className="rounded-md border-gray-200 text-sm focus:border-blue-500 focus:ring-blue-500"
-                value={filterOptions.sortBy}
-                onChange={(e) => setFilterOptions({
-                  ...filterOptions,
-                  sortBy: e.target.value as any
-                })}
-              >
-                <option value="dueDate">Ordenar por data</option>
-                <option value="priority">Ordenar por prioridade</option>
-                <option value="createdAt">Ordenar por criação</option>
-              </select>
-            </div>
-
+          {activeFiltersCount > 0 && (
             <button
               className="text-sm text-blue-600 hover:text-blue-800"
               onClick={() => setFilterOptions({
@@ -457,9 +365,147 @@ export const TasksView: React.FC = () => {
             >
               Limpar filtros
             </button>
-          </div>
+          )}
         </div>
       </div>
+
+      {/* Painel de Filtros Expandido */}
+      {showFilters && (
+        <div className="mb-6 bg-white rounded-lg border border-gray-200 p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* Status */}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Status
+              </label>
+              <select
+                className="w-full rounded-lg border-gray-200 text-sm focus:border-blue-500 focus:ring-blue-500"
+                value={filterOptions.status}
+                onChange={(e) => setFilterOptions({
+                  ...filterOptions,
+                  status: e.target.value as any
+                })}
+              >
+                {Object.entries(statusLabels).map(([value, label]) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Prioridade */}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Prioridade
+              </label>
+              <select
+                className="w-full rounded-lg border-gray-200 text-sm focus:border-blue-500 focus:ring-blue-500"
+                value={filterOptions.priority}
+                onChange={(e) => setFilterOptions({
+                  ...filterOptions,
+                  priority: e.target.value as any
+                })}
+              >
+                <option value="todas">Todas as prioridades</option>
+                <option value="baixa">Baixa</option>
+                <option value="média">Média</option>
+                <option value="alta">Alta</option>
+              </select>
+            </div>
+
+            {/* Lista */}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Lista
+              </label>
+              <select
+                className="w-full rounded-lg border-gray-200 text-sm focus:border-blue-500 focus:ring-blue-500"
+                value={filterOptions.listId}
+                onChange={(e) => setFilterOptions({
+                  ...filterOptions,
+                  listId: e.target.value
+                })}
+              >
+                <option value="todas">Todas as listas</option>
+                {lists.map(list => (
+                  <option key={list.id} value={list.id}>{list.name}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Cliente */}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Cliente
+              </label>
+              <select
+                className="w-full rounded-lg border-gray-200 text-sm focus:border-blue-500 focus:ring-blue-500"
+                value={filterOptions.clientId}
+                onChange={(e) => setFilterOptions({
+                  ...filterOptions,
+                  clientId: e.target.value
+                })}
+              >
+                <option value="todos">Todos os clientes</option>
+                {clients.map(client => (
+                  <option key={client.id} value={client.id}>{client.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Filtros de Data */}
+          <div className="mt-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Intervalo de Datas Específico
+            </label>
+            <div className="flex items-center space-x-4">
+              <div className="flex-1">
+                <input
+                  type="date"
+                  className="w-full rounded-lg border-gray-200 text-sm focus:border-blue-500 focus:ring-blue-500"
+                  value={filterOptions.startDate}
+                  onChange={(e) => setFilterOptions({
+                    ...filterOptions,
+                    startDate: e.target.value,
+                    endDate: e.target.value || filterOptions.endDate,
+                    dateRange: ''
+                  })}
+                />
+              </div>
+              <span className="text-gray-500">até</span>
+              <div className="flex-1">
+                <input
+                  type="date"
+                  className="w-full rounded-lg border-gray-200 text-sm focus:border-blue-500 focus:ring-blue-500"
+                  value={filterOptions.endDate}
+                  min={filterOptions.startDate}
+                  onChange={(e) => setFilterOptions({
+                    ...filterOptions,
+                    endDate: e.target.value,
+                    dateRange: ''
+                  })}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Opções Adicionais */}
+          <div className="mt-6 flex items-center">
+            <label className="flex items-center text-sm text-gray-600">
+              <input 
+                type="checkbox" 
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 mr-2"
+                checked={filterOptions.showCompleted}
+                onChange={() => setFilterOptions({
+                  ...filterOptions,
+                  showCompleted: !filterOptions.showCompleted
+                })}
+              />
+              Mostrar tarefas concluídas
+            </label>
+          </div>
+        </div>
+      )}
 
       {showNewTaskModal && (
         <TaskModal
