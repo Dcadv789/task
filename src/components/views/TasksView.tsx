@@ -37,16 +37,17 @@ export const TasksView: React.FC = () => {
     clientId: 'todos' as string | 'todos',
     listId: 'todas' as string | 'todas',
     sortBy: 'dueDate' as 'dueDate' | 'priority' | 'createdAt',
-    date: '' as string,
+    startDate: '',
+    endDate: '',
     dateRange: '' as '' | 'hoje' | 'semana' | 'mes'
   });
 
-  // Função para gerar ocorrências de tarefas recorrentes
+  // Função auxiliar para gerar ocorrências de tarefas recorrentes
   const generateRecurringTaskOccurrences = (task: Task, startDate: Date, endDate: Date): Date[] => {
     if (!task.recurrence || !task.dueDate) return [];
 
     const dates: Date[] = [];
-    const taskStartDate = adjustTimezone(new Date(task.dueDate));
+    const taskStartDate = new Date(task.dueDate);
     let currentDate = new Date(startDate);
     currentDate.setHours(taskStartDate.getHours(), taskStartDate.getMinutes());
 
@@ -58,7 +59,7 @@ export const TasksView: React.FC = () => {
           if (!daysOfWeek || daysOfWeek.includes(currentDate.getDay())) {
             dates.push(new Date(currentDate));
           }
-          currentDate.setDate(currentDate.getDate() + interval);
+          currentDate.setDate(currentDate.getDate() + 1);
           break;
 
         case 'semanal':
@@ -97,6 +98,22 @@ export const TasksView: React.FC = () => {
 
     return dates;
   };
+
+  // Função para verificar se uma tarefa ocorre em um intervalo de datas
+  const taskOccursInRange = (task: Task, startDate: Date, endDate: Date): boolean => {
+    if (!task.dueDate) return false;
+
+    const taskDate = new Date(task.dueDate);
+    
+    // Para tarefas não recorrentes
+    if (!task.recurrence) {
+      return taskDate >= startDate && taskDate <= endDate;
+    }
+
+    // Para tarefas recorrentes
+    const occurrences = generateRecurringTaskOccurrences(task, startDate, endDate);
+    return occurrences.length > 0;
+  };
   
   // Filtrar tarefas
   const filteredTasks = tasks.filter(task => {
@@ -121,63 +138,42 @@ export const TasksView: React.FC = () => {
     // Filtrar por prioridade
     if (filterOptions.priority !== 'todas' && task.priority !== filterOptions.priority) return false;
     
-    // Filtrar por data específica ou intervalo
-    if (filterOptions.date || filterOptions.dateRange) {
-      if (!task.dueDate && !task.recurrence) return false;
-
-      const taskDate = task.dueDate ? adjustTimezone(new Date(task.dueDate)) : null;
-      const today = adjustTimezone(new Date());
+    // Filtrar por intervalo de datas específico
+    if (filterOptions.startDate && filterOptions.endDate) {
+      const startDate = new Date(filterOptions.startDate);
+      startDate.setHours(0, 0, 0, 0);
+      const endDate = new Date(filterOptions.endDate);
+      endDate.setHours(23, 59, 59, 999);
+      return taskOccursInRange(task, startDate, endDate);
+    }
+    
+    // Filtrar por intervalo predefinido
+    if (filterOptions.dateRange) {
+      const today = new Date();
       today.setHours(0, 0, 0, 0);
 
-      // Para tarefas não recorrentes
-      if (!task.recurrence) {
-        if (!taskDate) return false;
-
-        if (filterOptions.date) {
-          const filterDate = adjustTimezone(new Date(filterOptions.date));
-          return isSameDay(taskDate, filterDate);
-        }
-
-        if (filterOptions.dateRange === 'hoje') {
-          return isSameDay(taskDate, today);
-        }
-
-        if (filterOptions.dateRange === 'semana') {
-          const weekStart = new Date(today);
-          weekStart.setDate(today.getDate() - today.getDay());
-          const weekEnd = new Date(weekStart);
-          weekEnd.setDate(weekStart.getDate() + 6);
-          return taskDate >= weekStart && taskDate <= weekEnd;
-        }
-
-        if (filterOptions.dateRange === 'mes') {
-          return taskDate.getFullYear() === today.getFullYear() &&
-                 taskDate.getMonth() === today.getMonth();
-        }
+      if (filterOptions.dateRange === 'hoje') {
+        const endOfDay = new Date(today);
+        endOfDay.setHours(23, 59, 59, 999);
+        return taskOccursInRange(task, today, endOfDay);
       }
-      // Para tarefas recorrentes
-      else {
-        let startDate: Date;
-        let endDate: Date;
 
-        if (filterOptions.date) {
-          startDate = adjustTimezone(new Date(filterOptions.date));
-          endDate = new Date(startDate);
-        } else if (filterOptions.dateRange === 'hoje') {
-          startDate = today;
-          endDate = today;
-        } else if (filterOptions.dateRange === 'semana') {
-          startDate = new Date(today);
-          startDate.setDate(today.getDate() - today.getDay());
-          endDate = new Date(startDate);
-          endDate.setDate(startDate.getDate() + 6);
-        } else { // mês
-          startDate = new Date(today.getFullYear(), today.getMonth(), 1);
-          endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-        }
+      if (filterOptions.dateRange === 'semana') {
+        const weekStart = new Date(today);
+        weekStart.setDate(today.getDate() - today.getDay());
+        weekStart.setHours(0, 0, 0, 0);
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekStart.getDate() + 6);
+        weekEnd.setHours(23, 59, 59, 999);
+        return taskOccursInRange(task, weekStart, weekEnd);
+      }
 
-        const occurrences = generateRecurringTaskOccurrences(task, startDate, endDate);
-        return occurrences.length > 0;
+      if (filterOptions.dateRange === 'mes') {
+        const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+        monthStart.setHours(0, 0, 0, 0);
+        const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+        monthEnd.setHours(23, 59, 59, 999);
+        return taskOccursInRange(task, monthStart, monthEnd);
       }
     }
     
@@ -227,7 +223,8 @@ export const TasksView: React.FC = () => {
     setFilterOptions(prev => ({
       ...prev,
       dateRange: prev.dateRange === range ? '' : range,
-      date: '' // Limpa a data específica quando seleciona um intervalo
+      startDate: '', // Limpa o intervalo de datas específico
+      endDate: ''
     }));
   };
   
@@ -356,17 +353,30 @@ export const TasksView: React.FC = () => {
         <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700">
-              Data Específica
+              Intervalo de Datas
             </label>
             <div className="flex gap-2">
               <input
                 type="date"
                 className="flex-1 rounded-md border-gray-200 text-sm focus:border-blue-500 focus:ring-blue-500"
-                value={filterOptions.date}
+                value={filterOptions.startDate}
                 onChange={(e) => setFilterOptions({
                   ...filterOptions,
-                  date: e.target.value,
-                  dateRange: '' // Limpa o intervalo quando seleciona uma data específica
+                  startDate: e.target.value,
+                  endDate: e.target.value, // Define a data final igual à inicial se estiver vazia
+                  dateRange: '' // Limpa o intervalo predefinido
+                })}
+              />
+              <span className="flex items-center text-gray-500">até</span>
+              <input
+                type="date"
+                className="flex-1 rounded-md border-gray-200 text-sm focus:border-blue-500 focus:ring-blue-500"
+                value={filterOptions.endDate}
+                min={filterOptions.startDate}
+                onChange={(e) => setFilterOptions({
+                  ...filterOptions,
+                  endDate: e.target.value,
+                  dateRange: '' // Limpa o intervalo predefinido
                 })}
               />
               <button
@@ -440,7 +450,8 @@ export const TasksView: React.FC = () => {
                 clientId: 'todos',
                 listId: 'todas',
                 sortBy: 'dueDate',
-                date: '',
+                startDate: '',
+                endDate: '',
                 dateRange: ''
               })}
             >
