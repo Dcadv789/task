@@ -1,23 +1,12 @@
 import React, { useState } from 'react';
-import TaskCard from '../tasks/TaskCard';
 import { useAppContext } from '../../context/AppContext';
-import { TaskList, Client, Task } from '../../types';
-import { 
-  Plus, 
-  Filter,
-  ListFilter,
-  CheckSquare,
-  ClipboardList,
-  LayoutGrid,
-  LayoutList,
-  X,
-  Calendar,
-  ChevronDown,
-  ChevronUp
-} from 'lucide-react';
-import TaskForm from '../tasks/TaskForm';
+import { Task } from '../../types';
+import TaskHeader from '../tasks/TaskHeader';
+import TaskFilters from '../tasks/TaskFilters';
+import TaskList from '../tasks/TaskList';
+import EmptyTaskState from '../tasks/EmptyTaskState';
 import TaskModal from '../tasks/TaskModal';
-import { adjustTimezone, isSameDay } from '../../utils/dateUtils';
+import { adjustTimezone } from '../../utils/dateUtils';
 
 export const TasksView: React.FC = () => {
   const { 
@@ -214,14 +203,6 @@ export const TasksView: React.FC = () => {
     return 'Todas as Tarefas';
   };
 
-  const statusLabels = {
-    'todas': 'Todos os status',
-    'em_aberto': 'Em Aberto',
-    'em_andamento': 'Em Andamento',
-    'concluido': 'Concluído',
-    'nao_feito': 'Não Feito'
-  };
-
   const handleDateRangeClick = (range: '' | 'hoje' | 'semana' | 'mes') => {
     setFilterOptions(prev => ({
       ...prev,
@@ -242,269 +223,58 @@ export const TasksView: React.FC = () => {
     return count;
   };
 
-  const activeFiltersCount = getActiveFiltersCount();
-  
+  const handleFilterChange = (newFilters: Partial<typeof filterOptions>) => {
+    setFilterOptions(prev => ({ ...prev, ...newFilters }));
+  };
+
+  const handleClearFilters = () => {
+    setFilterOptions({
+      showCompleted: true,
+      priority: 'todas',
+      status: 'todas',
+      clientId: 'todos',
+      listId: 'todas',
+      sortBy: 'dueDate',
+      startDate: '',
+      endDate: '',
+      dateRange: ''
+    });
+  };
+
   return (
     <div className="h-full flex flex-col">
-      <div className="mb-6 flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800">{getViewTitle()}</h1>
-          <p className="text-gray-500">
-            {sortedTasks.length} {sortedTasks.length === 1 ? 'tarefa' : 'tarefas'} • {tasks.filter(t => t.completed).length} concluídas
-          </p>
-        </div>
-        
-        <div className="flex space-x-2">
-          <div className="flex border border-gray-200 rounded-lg overflow-hidden">
-            <button 
-              className={`p-2 ${viewMode === 'list' ? 'bg-blue-50 text-blue-600' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
-              onClick={() => setViewMode('list')}
-              aria-label="Visualização em lista"
-            >
-              <LayoutList size={18} />
-            </button>
-            <button 
-              className={`p-2 ${viewMode === 'grid' ? 'bg-blue-50 text-blue-600' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
-              onClick={() => setViewMode('grid')}
-              aria-label="Visualização em grade"
-            >
-              <LayoutGrid size={18} />
-            </button>
-          </div>
-          
-          <button 
-            className="flex items-center px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
-            onClick={() => setShowNewTaskModal(true)}
-          >
-            <Plus size={18} className="mr-1" />
-            <span>Nova Tarefa</span>
-          </button>
-        </div>
-      </div>
+      <TaskHeader
+        title={getViewTitle()}
+        totalTasks={sortedTasks.length}
+        completedTasks={tasks.filter(t => t.completed).length}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+        onNewTask={() => setShowNewTaskModal(true)}
+      />
 
-      {/* Cabeçalho dos Filtros */}
-      <div className="mb-4 flex items-center justify-between bg-white rounded-lg border border-gray-200 p-4">
-        <div className="flex items-center space-x-4">
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center text-gray-700 hover:text-gray-900"
-          >
-            <Filter size={20} className="mr-2" />
-            <span className="font-medium">Filtros</span>
-            {activeFiltersCount > 0 && (
-              <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-sm">
-                {activeFiltersCount}
-              </span>
-            )}
-            {showFilters ? <ChevronUp size={20} className="ml-2" /> : <ChevronDown size={20} className="ml-2" />}
-          </button>
-
-          {/* Filtros Rápidos */}
-          <div className="flex items-center space-x-2">
-            <button
-              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                filterOptions.dateRange === 'hoje'
-                  ? 'bg-blue-100 text-blue-700'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-              onClick={() => handleDateRangeClick('hoje')}
-            >
-              Hoje
-            </button>
-            <button
-              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                filterOptions.dateRange === 'semana'
-                  ? 'bg-blue-100 text-blue-700'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-              onClick={() => handleDateRangeClick('semana')}
-            >
-              Esta Semana
-            </button>
-            <button
-              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                filterOptions.dateRange === 'mes'
-                  ? 'bg-blue-100 text-blue-700'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-              onClick={() => handleDateRangeClick('mes')}
-            >
-              Este Mês
-            </button>
-          </div>
-        </div>
-
-        <div className="flex items-center space-x-4">
-          <select
-            className="px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-700 text-sm focus:border-blue-500 focus:ring-blue-500 cursor-pointer hover:border-gray-400 transition-colors"
-            value={filterOptions.sortBy}
-            onChange={(e) => setFilterOptions({
-              ...filterOptions,
-              sortBy: e.target.value as any
-            })}
-          >
-            <option value="dueDate">Ordenar por data</option>
-            <option value="priority">Ordenar por prioridade</option>
-            <option value="createdAt">Ordenar por criação</option>
-          </select>
-
-          {activeFiltersCount > 0 && (
-            <button
-              className="text-sm text-blue-600 hover:text-blue-800"
-              onClick={() => setFilterOptions({
-                showCompleted: true,
-                priority: 'todas',
-                status: 'todas',
-                clientId: 'todos',
-                listId: 'todas',
-                sortBy: 'dueDate',
-                startDate: '',
-                endDate: '',
-                dateRange: ''
-              })}
-            >
-              Limpar filtros
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Painel de Filtros Expandido */}
-      {showFilters && (
-        <div className="mb-6 bg-white rounded-lg border border-gray-200 p-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {/* Status */}
-            <div className="space-y-3">
-              <label className="block text-sm font-medium text-gray-700">
-                Status
-              </label>
-              <select
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-700 text-sm focus:border-blue-500 focus:ring-blue-500 cursor-pointer hover:border-gray-400 transition-colors"
-                value={filterOptions.status}
-                onChange={(e) => setFilterOptions({
-                  ...filterOptions,
-                  status: e.target.value as any
-                })}
-              >
-                {Object.entries(statusLabels).map(([value, label]) => (
-                  <option key={value} value={value}>{label}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Prioridade */}
-            <div className="space-y-3">
-              <label className="block text-sm font-medium text-gray-700">
-                Prioridade
-              </label>
-              <select
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-700 text-sm focus:border-blue-500 focus:ring-blue-500 cursor-pointer hover:border-gray-400 transition-colors"
-                value={filterOptions.priority}
-                onChange={(e) => setFilterOptions({
-                  ...filterOptions,
-                  priority: e.target.value as any
-                })}
-              >
-                <option value="todas">Todas as prioridades</option>
-                <option value="baixa">Baixa</option>
-                <option value="média">Média</option>
-                <option value="alta">Alta</option>
-              </select>
-            </div>
-
-            {/* Lista */}
-            <div className="space-y-3">
-              <label className="block text-sm font-medium text-gray-700">
-                Lista
-              </label>
-              <select
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-700 text-sm focus:border-blue-500 focus:ring-blue-500 cursor-pointer hover:border-gray-400 transition-colors"
-                value={filterOptions.listId}
-                onChange={(e) => setFilterOptions({
-                  ...filterOptions,
-                  listId: e.target.value
-                })}
-              >
-                <option value="todas">Todas as listas</option>
-                {lists.map(list => (
-                  <option key={list.id} value={list.id}>{list.name}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Cliente */}
-            <div className="space-y-3">
-              <label className="block text-sm font-medium text-gray-700">
-                Cliente
-              </label>
-              <select
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-700 text-sm focus:border-blue-500 focus:ring-blue-500 cursor-pointer hover:border-gray-400 transition-colors"
-                value={filterOptions.clientId}
-                onChange={(e) => setFilterOptions({
-                  ...filterOptions,
-                  clientId: e.target.value
-                })}
-              >
-                <option value="todos">Todos os clientes</option>
-                {clients.map(client => (
-                  <option key={client.id} value={client.id}>{client.name}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* Filtros de Data */}
-          <div className="mt-8 space-y-3">
-            <label className="block text-sm font-medium text-gray-700">
-              Intervalo de Datas Específico
-            </label>
-            <div className="flex items-center space-x-4">
-              <div className="flex-1">
-                <input
-                  type="date"
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-700 text-sm focus:border-blue-500 focus:ring-blue-500 cursor-pointer hover:border-gray-400 transition-colors"
-                  value={filterOptions.startDate}
-                  onChange={(e) => setFilterOptions({
-                    ...filterOptions,
-                    startDate: e.target.value,
-                    endDate: e.target.value || filterOptions.endDate,
-                    dateRange: ''
-                  })}
-                />
-              </div>
-              <span className="text-gray-500 font-medium">até</span>
-              <div className="flex-1">
-                <input
-                  type="date"
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-700 text-sm focus:border-blue-500 focus:ring-blue-500 cursor-pointer hover:border-gray-400 transition-colors"
-                  value={filterOptions.endDate}
-                  min={filterOptions.startDate}
-                  onChange={(e) => setFilterOptions({
-                    ...filterOptions,
-                    endDate: e.target.value,
-                    dateRange: ''
-                  })}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Opções Adicionais */}
-          <div className="mt-8 flex items-center">
-            <label className="flex items-center text-sm text-gray-700 cursor-pointer">
-              <input 
-                type="checkbox" 
-                className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 mr-3"
-                checked={filterOptions.showCompleted}
-                onChange={() => setFilterOptions({
-                  ...filterOptions,
-                  showCompleted: !filterOptions.showCompleted
-                })}
-              />
-              Mostrar tarefas concluídas
-            </label>
-          </div>
-        </div>
+      <TaskFilters
+        filterOptions={filterOptions}
+        showFilters={showFilters}
+        onFilterChange={handleFilterChange}
+        onToggleFilters={() => setShowFilters(!showFilters)}
+        activeFiltersCount={getActiveFiltersCount()}
+        onDateRangeClick={handleDateRangeClick}
+        onClearFilters={handleClearFilters}
+        lists={lists}
+        clients={clients}
+      />
+      
+      {sortedTasks.length === 0 ? (
+        <EmptyTaskState
+          hasSearchQuery={!!searchQuery}
+          onNewTask={() => setShowNewTaskModal(true)}
+        />
+      ) : (
+        <TaskList
+          tasks={sortedTasks}
+          viewMode={viewMode}
+          onEditTask={setEditingTaskId}
+        />
       )}
 
       {showNewTaskModal && (
@@ -522,38 +292,6 @@ export const TasksView: React.FC = () => {
           task={tasks.find(t => t.id === editingTaskId)}
           onClose={() => setEditingTaskId(null)}
         />
-      )}
-      
-      {sortedTasks.length === 0 ? (
-        <div className="flex flex-col items-center justify-center flex-1 text-center p-6">
-          <ClipboardList size={48} className="text-gray-300 mb-3" />
-          <h2 className="text-xl font-medium text-gray-700 mb-1">Nenhuma tarefa encontrada</h2>
-          <p className="text-gray-500 mb-4">
-            {searchQuery 
-              ? 'Nenhuma tarefa corresponde à sua busca'
-              : 'Adicione uma nova tarefa para começar'
-            }
-          </p>
-          <button 
-            className="flex items-center px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
-            onClick={() => setShowNewTaskModal(true)}
-          >
-            <Plus size={18} className="mr-1" />
-            <span>Nova Tarefa</span>
-          </button>
-        </div>
-      ) : (
-        <div className={`flex-1 overflow-y-auto ${
-          viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4' : ''
-        }`}>
-          {sortedTasks.map((task: Task) => (
-            <TaskCard 
-              key={task.id} 
-              task={task} 
-              onEdit={() => setEditingTaskId(task.id)}
-            />
-          ))}
-        </div>
       )}
     </div>
   );
