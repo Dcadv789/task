@@ -52,7 +52,6 @@ const TaskModal: React.FC<TaskModalProps> = ({
       setSelectedClientIds(task.clientIds);
       setTags(task.tags);
 
-      // Configurar estados de recorrência
       if (task.recurrence) {
         setIsRecurring(true);
         setRecurrenceType(task.recurrence.type);
@@ -90,7 +89,9 @@ const TaskModal: React.FC<TaskModalProps> = ({
       type: recurrenceType,
       interval,
       endDate: null,
-      daysOfWeek: recurrenceType === 'semanal' ? selectedDays : undefined,
+      daysOfWeek: recurrenceType === 'semanal' || (recurrenceType === 'diária' && selectedDays.length > 0) 
+        ? selectedDays 
+        : undefined,
       dayOfMonth: recurrenceType === 'mensal' ? dayOfMonth : undefined,
       monthOfYear: recurrenceType === 'anual' ? monthOfYear : undefined
     } : null;
@@ -446,6 +447,28 @@ const TaskModal: React.FC<TaskModalProps> = ({
                   </div>
 
                   {/* Opções específicas para cada tipo de recorrência */}
+                  {recurrenceType === 'diária' && (
+                    <div>
+                      <label className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          checked={!selectedDays.includes(0) && !selectedDays.includes(6)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              // Remover sábado e domingo
+                              setSelectedDays([1, 2, 3, 4, 5]);
+                            } else {
+                              // Incluir todos os dias
+                              setSelectedDays([]);
+                            }
+                          }}
+                        />
+                        <span className="text-sm text-gray-700">Excluir finais de semana</span>
+                      </label>
+                    </div>
+                  )}
+
                   {recurrenceType === 'semanal' && (
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
