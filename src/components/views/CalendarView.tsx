@@ -27,20 +27,29 @@ export const CalendarView: React.FC = () => {
 
       switch (type) {
         case 'diária':
-          dates.push(new Date(currentDate));
+          if (!daysOfWeek || daysOfWeek.includes(currentDate.getDay())) {
+            dates.push(new Date(currentDate));
+          }
           currentDate.setDate(currentDate.getDate() + interval);
           break;
 
         case 'semanal':
           if (daysOfWeek && daysOfWeek.includes(currentDate.getDay())) {
-            dates.push(new Date(currentDate));
+            const weekNumber = Math.floor((currentDate.getTime() - taskStartDate.getTime()) / (7 * 24 * 60 * 60 * 1000));
+            if (weekNumber % interval === 0) {
+              dates.push(new Date(currentDate));
+            }
           }
           currentDate.setDate(currentDate.getDate() + 1);
           break;
 
         case 'mensal':
           if (currentDate.getDate() === taskStartDate.getDate()) {
-            dates.push(new Date(currentDate));
+            const monthDiff = (currentDate.getFullYear() - taskStartDate.getFullYear()) * 12 + 
+                            (currentDate.getMonth() - taskStartDate.getMonth());
+            if (monthDiff % interval === 0) {
+              dates.push(new Date(currentDate));
+            }
           }
           currentDate.setDate(currentDate.getDate() + 1);
           break;
@@ -48,7 +57,10 @@ export const CalendarView: React.FC = () => {
         case 'anual':
           if (currentDate.getMonth() === taskStartDate.getMonth() && 
               currentDate.getDate() === taskStartDate.getDate()) {
-            dates.push(new Date(currentDate));
+            const yearDiff = currentDate.getFullYear() - taskStartDate.getFullYear();
+            if (yearDiff % interval === 0) {
+              dates.push(new Date(currentDate));
+            }
           }
           currentDate.setDate(currentDate.getDate() + 1);
           break;
