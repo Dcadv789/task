@@ -89,10 +89,11 @@ export const CalendarView: React.FC = () => {
       if (!task.dueDate) return false;
 
       const taskDate = new Date(task.dueDate);
+      taskDate.setHours(0, 0, 0, 0);
       
       // Para tarefas não recorrentes
       if (!task.recurrence) {
-        return taskDate >= startOfDay && taskDate <= endOfDay;
+        return taskDate.getTime() === startOfDay.getTime();
       }
 
       // Para tarefas recorrentes
