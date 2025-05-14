@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import TaskForm from '../tasks/TaskForm';
 import TaskModal from '../tasks/TaskModal';
+import { adjustTimezone, isSameDay } from '../../utils/dateUtils';
 
 export const TasksView: React.FC = () => {
   const { 
@@ -39,6 +40,63 @@ export const TasksView: React.FC = () => {
     date: '' as string,
     dateRange: '' as '' | 'hoje' | 'semana' | 'mes'
   });
+
+  // Função para gerar ocorrências de tarefas recorrentes
+  const generateRecurringTaskOccurrences = (task: Task, startDate: Date, endDate: Date): Date[] => {
+    if (!task.recurrence || !task.dueDate) return [];
+
+    const dates: Date[] = [];
+    const taskStartDate = adjustTimezone(new Date(task.dueDate));
+    let currentDate = new Date(startDate);
+    currentDate.setHours(taskStartDate.getHours(), taskStartDate.getMinutes());
+
+    while (currentDate <= endDate) {
+      const { type, interval, daysOfWeek } = task.recurrence;
+
+      switch (type) {
+        case 'diária':
+          if (!daysOfWeek || daysOfWeek.includes(currentDate.getDay())) {
+            dates.push(new Date(currentDate));
+          }
+          currentDate.setDate(currentDate.getDate() + interval);
+          break;
+
+        case 'semanal':
+          if (daysOfWeek && daysOfWeek.includes(currentDate.getDay())) {
+            const weekNumber = Math.floor((currentDate.getTime() - taskStartDate.getTime()) / (7 * 24 * 60 * 60 * 1000));
+            if (weekNumber % interval === 0) {
+              dates.push(new Date(currentDate));
+            }
+          }
+          currentDate.setDate(currentDate.getDate() + 1);
+          break;
+
+        case 'mensal':
+          if (currentDate.getDate() === taskStartDate.getDate()) {
+            const monthDiff = (currentDate.getFullYear() - taskStartDate.getFullYear()) * 12 + 
+                            (currentDate.getMonth() - taskStartDate.getMonth());
+            if (monthDiff % interval === 0) {
+              dates.push(new Date(currentDate));
+            }
+          }
+          currentDate.setDate(currentDate.getDate() + 1);
+          break;
+
+        case 'anual':
+          if (currentDate.getMonth() === taskStartDate.getMonth() && 
+              currentDate.getDate() === taskStartDate.getDate()) {
+            const yearDiff = currentDate.getFullYear() - taskStartDate.getFullYear();
+            if (yearDiff % interval === 0) {
+              dates.push(new Date(currentDate));
+            }
+          }
+          currentDate.setDate(currentDate.getDate() + 1);
+          break;
+      }
+    }
+
+    return dates;
+  };
   
   // Filtrar tarefas
   const filteredTasks = tasks.filter(task => {
@@ -46,13 +104,13 @@ export const TasksView: React.FC = () => {
     if (selectedListId && task.listId !== selectedListId) return false;
     
     // Filtrar por cliente selecionado na sidebar
-    if (selectedClientId && task.clientId !== selectedClientId) return false;
+    if (selectedClientId && !task.clientIds?.includes(selectedClientId)) return false;
     
     // Filtrar por lista (do filtro)
     if (filterOptions.listId !== 'todas' && task.listId !== filterOptions.listId) return false;
     
     // Filtrar por cliente (do filtro)
-    if (filterOptions.clientId !== 'todos' && task.clientId !== filterOptions.clientId) return false;
+    if (filterOptions.clientId !== 'todos' && !task.clientIds?.includes(filterOptions.clientId)) return false;
     
     // Filtrar por status
     if (filterOptions.status !== 'todas' && task.status !== filterOptions.status) return false;
@@ -63,49 +121,63 @@ export const TasksView: React.FC = () => {
     // Filtrar por prioridade
     if (filterOptions.priority !== 'todas' && task.priority !== filterOptions.priority) return false;
     
-    // Filtrar por data específica
-    if (filterOptions.date && task.dueDate) {
-      const taskDate = new Date(task.dueDate);
-      const filterDate = new Date(filterOptions.date);
-      if (
-        taskDate.getFullYear() !== filterDate.getFullYear() ||
-        taskDate.getMonth() !== filterDate.getMonth() ||
-        taskDate.getDate() !== filterDate.getDate()
-      ) {
-        return false;
-      }
-    }
+    // Filtrar por data específica ou intervalo
+    if (filterOptions.date || filterOptions.dateRange) {
+      if (!task.dueDate && !task.recurrence) return false;
 
-    // Filtrar por intervalo de data
-    if (filterOptions.dateRange && task.dueDate) {
-      const taskDate = new Date(task.dueDate);
-      const today = new Date();
+      const taskDate = task.dueDate ? adjustTimezone(new Date(task.dueDate)) : null;
+      const today = adjustTimezone(new Date());
       today.setHours(0, 0, 0, 0);
 
-      if (filterOptions.dateRange === 'hoje') {
-        if (
-          taskDate.getFullYear() !== today.getFullYear() ||
-          taskDate.getMonth() !== today.getMonth() ||
-          taskDate.getDate() !== today.getDate()
-        ) {
-          return false;
+      // Para tarefas não recorrentes
+      if (!task.recurrence) {
+        if (!taskDate) return false;
+
+        if (filterOptions.date) {
+          const filterDate = adjustTimezone(new Date(filterOptions.date));
+          return isSameDay(taskDate, filterDate);
         }
-      } else if (filterOptions.dateRange === 'semana') {
-        const weekStart = new Date(today);
-        weekStart.setDate(today.getDate() - today.getDay());
-        const weekEnd = new Date(weekStart);
-        weekEnd.setDate(weekStart.getDate() + 6);
-        
-        if (taskDate < weekStart || taskDate > weekEnd) {
-          return false;
+
+        if (filterOptions.dateRange === 'hoje') {
+          return isSameDay(taskDate, today);
         }
-      } else if (filterOptions.dateRange === 'mes') {
-        if (
-          taskDate.getFullYear() !== today.getFullYear() ||
-          taskDate.getMonth() !== today.getMonth()
-        ) {
-          return false;
+
+        if (filterOptions.dateRange === 'semana') {
+          const weekStart = new Date(today);
+          weekStart.setDate(today.getDate() - today.getDay());
+          const weekEnd = new Date(weekStart);
+          weekEnd.setDate(weekStart.getDate() + 6);
+          return taskDate >= weekStart && taskDate <= weekEnd;
         }
+
+        if (filterOptions.dateRange === 'mes') {
+          return taskDate.getFullYear() === today.getFullYear() &&
+                 taskDate.getMonth() === today.getMonth();
+        }
+      }
+      // Para tarefas recorrentes
+      else {
+        let startDate: Date;
+        let endDate: Date;
+
+        if (filterOptions.date) {
+          startDate = adjustTimezone(new Date(filterOptions.date));
+          endDate = new Date(startDate);
+        } else if (filterOptions.dateRange === 'hoje') {
+          startDate = today;
+          endDate = today;
+        } else if (filterOptions.dateRange === 'semana') {
+          startDate = new Date(today);
+          startDate.setDate(today.getDate() - today.getDay());
+          endDate = new Date(startDate);
+          endDate.setDate(startDate.getDate() + 6);
+        } else { // mês
+          startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+          endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+        }
+
+        const occurrences = generateRecurringTaskOccurrences(task, startDate, endDate);
+        return occurrences.length > 0;
       }
     }
     

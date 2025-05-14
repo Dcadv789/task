@@ -9,22 +9,23 @@ import {
   BarChart3
 } from 'lucide-react';
 import TaskCard from '../tasks/TaskCard';
+import { adjustTimezone, isSameDay } from '../../utils/dateUtils';
 
 export const DashboardView: React.FC = () => {
   const { tasks, clients } = useAppContext();
   
-  // Obter tarefas do dia
-  const today = new Date();
+  // Obter tarefas do dia usando as funções de ajuste de timezone
+  const today = adjustTimezone(new Date());
   today.setHours(0, 0, 0, 0);
   
-  const tomorrow = new Date(today);
+  const tomorrow = adjustTimezone(new Date(today));
   tomorrow.setDate(tomorrow.getDate() + 1);
   
   const tasksForToday = tasks.filter(task => {
     if (!task.dueDate) return false;
-    const taskDate = new Date(task.dueDate);
+    const taskDate = adjustTimezone(new Date(task.dueDate));
     taskDate.setHours(0, 0, 0, 0);
-    return taskDate.getTime() === today.getTime();
+    return isSameDay(taskDate, today);
   });
   
   // Estatísticas gerais
@@ -32,7 +33,8 @@ export const DashboardView: React.FC = () => {
   const completedTasks = tasks.filter(t => t.completed).length;
   const overdueTasks = tasks.filter(t => {
     if (!t.dueDate || t.completed) return false;
-    return new Date(t.dueDate) < today;
+    const taskDate = adjustTimezone(new Date(t.dueDate));
+    return taskDate < today;
   }).length;
   
   // Estatísticas por status
@@ -46,8 +48,8 @@ export const DashboardView: React.FC = () => {
   // Estatísticas por cliente
   const tasksByClient = clients.map(client => ({
     client,
-    total: tasks.filter(t => t.clientId === client.id).length,
-    completed: tasks.filter(t => t.clientId === client.id && t.completed).length
+    total: tasks.filter(t => t.clientIds?.includes(client.id) ?? false).length,
+    completed: tasks.filter(t => t.clientIds?.includes(client.id) && t.completed).length
   }));
   
   return (
@@ -89,7 +91,7 @@ export const DashboardView: React.FC = () => {
             <Users className="h-8 w-8 text-purple-500" />
           </div>
           <p className="mt-2 text-sm text-gray-500">
-            Com {tasks.filter(t => t.clientId).length} tarefas
+            Com {tasks.filter(t => t.clientIds?.length > 0).length} tarefas
           </p>
         </div>
 
