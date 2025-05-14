@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { Task, Client } from '../../types';
-import { X, Calendar, Flag, User, Tag, Clock, Plus, ChevronDown } from 'lucide-react';
+import { X, Calendar, Flag, User, Tag, Clock, Plus, ChevronDown, RefreshCw } from 'lucide-react';
 
 interface TaskModalProps {
   isOpen: boolean;
@@ -32,6 +32,14 @@ const TaskModal: React.FC<TaskModalProps> = ({
   const [newTag, setNewTag] = useState('');
   const [showClientDropdown, setShowClientDropdown] = useState(false);
   const [newClient, setNewClient] = useState('');
+
+  // Estados para recorrência
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [recurrenceType, setRecurrenceType] = useState<'diária' | 'semanal' | 'mensal' | 'anual'>('semanal');
+  const [interval, setInterval] = useState(1);
+  const [selectedDays, setSelectedDays] = useState<number[]>([]);
+  const [dayOfMonth, setDayOfMonth] = useState(1);
+  const [monthOfYear, setMonthOfYear] = useState(1);
   
   useEffect(() => {
     if (task) {
@@ -43,6 +51,22 @@ const TaskModal: React.FC<TaskModalProps> = ({
       setSelectedListId(task.listId);
       setSelectedClientIds(task.clientIds);
       setTags(task.tags);
+
+      // Configurar estados de recorrência
+      if (task.recurrence) {
+        setIsRecurring(true);
+        setRecurrenceType(task.recurrence.type);
+        setInterval(task.recurrence.interval);
+        if (task.recurrence.daysOfWeek) {
+          setSelectedDays(task.recurrence.daysOfWeek);
+        }
+        if (task.recurrence.dayOfMonth) {
+          setDayOfMonth(task.recurrence.dayOfMonth);
+        }
+        if (task.recurrence.monthOfYear) {
+          setMonthOfYear(task.recurrence.monthOfYear);
+        }
+      }
     }
   }, [task]);
 
@@ -61,6 +85,15 @@ const TaskModal: React.FC<TaskModalProps> = ({
     e.preventDefault();
     
     if (!title.trim()) return;
+
+    const recurrenceData = isRecurring ? {
+      type: recurrenceType,
+      interval,
+      endDate: null,
+      daysOfWeek: recurrenceType === 'semanal' ? selectedDays : undefined,
+      dayOfMonth: recurrenceType === 'mensal' ? dayOfMonth : undefined,
+      monthOfYear: recurrenceType === 'anual' ? monthOfYear : undefined
+    } : null;
     
     const taskData = {
       title,
@@ -73,7 +106,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
       completedClientIds: [],
       listId: selectedListId,
       parentId: null,
-      recurrence: null,
+      recurrence: recurrenceData,
       tags
     };
 
@@ -96,12 +129,28 @@ const TaskModal: React.FC<TaskModalProps> = ({
     setSelectedClientIds(selectedClientIds.filter(id => id !== clientId));
   };
 
+  const weekDays = [
+    { value: 0, label: 'Domingo' },
+    { value: 1, label: 'Segunda' },
+    { value: 2, label: 'Terça' },
+    { value: 3, label: 'Quarta' },
+    { value: 4, label: 'Quinta' },
+    { value: 5, label: 'Sexta' },
+    { value: 6, label: 'Sábado' }
+  ];
+
+  const monthDays = Array.from({ length: 31 }, (_, i) => i + 1);
+  const months = [
+    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+  ];
+
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div ref={modalRef} className="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4">
-        <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+      <div ref={modalRef} className="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white">
           <h2 className="text-xl font-semibold text-gray-800">
             {task ? 'Editar Tarefa' : 'Nova Tarefa'}
           </h2>
@@ -335,6 +384,150 @@ const TaskModal: React.FC<TaskModalProps> = ({
                       </button>
                     </span>
                   ))}
+                </div>
+              )}
+            </div>
+
+            {/* Recorrência */}
+            <div className="space-y-4">
+              <div className="flex items-center">
+                <input
+                  id="recurring"
+                  type="checkbox"
+                  className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  checked={isRecurring}
+                  onChange={() => setIsRecurring(!isRecurring)}
+                />
+                <label htmlFor="recurring" className="ml-2 flex items-center text-sm text-gray-700">
+                  <RefreshCw size={16} className="mr-2" />
+                  Tarefa recorrente
+                </label>
+              </div>
+              
+              {isRecurring && (
+                <div className="pl-6 space-y-4">
+                  <div className="grid grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Frequência
+                      </label>
+                      <select
+                        className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+                        value={recurrenceType}
+                        onChange={(e) => setRecurrenceType(e.target.value as any)}
+                      >
+                        <option value="diária">Diária</option>
+                        <option value="semanal">Semanal</option>
+                        <option value="mensal">Mensal</option>
+                        <option value="anual">Anual</option>
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        A cada
+                      </label>
+                      <div className="flex items-center">
+                        <input
+                          type="number"
+                          min="1"
+                          className="w-24 px-4 py-2 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+                          value={interval}
+                          onChange={(e) => setInterval(parseInt(e.target.value) || 1)}
+                        />
+                        <span className="ml-3 text-sm text-gray-600">
+                          {recurrenceType === 'diária' && (interval > 1 ? 'dias' : 'dia')}
+                          {recurrenceType === 'semanal' && (interval > 1 ? 'semanas' : 'semana')}
+                          {recurrenceType === 'mensal' && (interval > 1 ? 'meses' : 'mês')}
+                          {recurrenceType === 'anual' && (interval > 1 ? 'anos' : 'ano')}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Opções específicas para cada tipo de recorrência */}
+                  {recurrenceType === 'semanal' && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Dias da semana
+                      </label>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                        {weekDays.map(day => (
+                          <label key={day.value} className="flex items-center space-x-2">
+                            <input
+                              type="checkbox"
+                              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                              checked={selectedDays.includes(day.value)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedDays([...selectedDays, day.value]);
+                                } else {
+                                  setSelectedDays(selectedDays.filter(d => d !== day.value));
+                                }
+                              }}
+                            />
+                            <span className="text-sm text-gray-700">{day.label}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {recurrenceType === 'mensal' && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Dia do mês
+                      </label>
+                      <select
+                        className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+                        value={dayOfMonth}
+                        onChange={(e) => setDayOfMonth(parseInt(e.target.value))}
+                      >
+                        {monthDays.map(day => (
+                          <option key={day} value={day}>
+                            Dia {day}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {recurrenceType === 'anual' && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Mês
+                        </label>
+                        <select
+                          className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+                          value={monthOfYear}
+                          onChange={(e) => setMonthOfYear(parseInt(e.target.value))}
+                        >
+                          {months.map((month, index) => (
+                            <option key={index + 1} value={index + 1}>
+                              {month}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Dia
+                        </label>
+                        <select
+                          className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+                          value={dayOfMonth}
+                          onChange={(e) => setDayOfMonth(parseInt(e.target.value))}
+                        >
+                          {monthDays.map(day => (
+                            <option key={day} value={day}>
+                              Dia {day}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
