@@ -4,6 +4,7 @@ import { Task } from '../../types';
 import { Plus, Clock, CheckSquare, Calendar } from 'lucide-react';
 import CalendarFilter from '../calendar/CalendarFilter';
 import TaskModal from '../calendar/TaskModal';
+import { adjustTimezone, isSameDay } from '../../utils/dateUtils';
 
 export const CalendarView: React.FC = () => {
   const { tasks, clients } = useAppContext();
@@ -72,9 +73,9 @@ export const CalendarView: React.FC = () => {
 
   // Função para obter todas as tarefas para uma data específica
   const getTasksForDate = (date: Date) => {
-    const startOfDay = new Date(date);
+    const startOfDay = adjustTimezone(new Date(date));
     startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(date);
+    const endOfDay = adjustTimezone(new Date(date));
     endOfDay.setHours(23, 59, 59, 999);
 
     return tasks.filter(task => {
@@ -88,12 +89,11 @@ export const CalendarView: React.FC = () => {
 
       if (!task.dueDate) return false;
 
-      const taskDate = new Date(task.dueDate);
-      taskDate.setHours(0, 0, 0, 0);
+      const taskDate = adjustTimezone(new Date(task.dueDate));
       
       // Para tarefas não recorrentes
       if (!task.recurrence) {
-        return taskDate.getTime() === startOfDay.getTime();
+        return isSameDay(taskDate, startOfDay);
       }
 
       // Para tarefas recorrentes
@@ -151,9 +151,7 @@ export const CalendarView: React.FC = () => {
     // Dias do mês atual
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(year, month, day);
-      const isToday = date.getDate() === today.getDate() && 
-                      date.getMonth() === today.getMonth() && 
-                      date.getFullYear() === today.getFullYear();
+      const isToday = isSameDay(date, today);
       
       calendarDays.push({
         day,
@@ -250,7 +248,7 @@ export const CalendarView: React.FC = () => {
       <div className="grid grid-cols-7 gap-6">
         {weekDays.map((date, index) => {
           const tasksForDay = getTasksForDate(date);
-          const isToday = date.toDateString() === today.toDateString();
+          const isToday = isSameDay(date, today);
 
           return (
             <div key={index} className="flex flex-col">
@@ -316,7 +314,7 @@ export const CalendarView: React.FC = () => {
 
   const renderDayView = () => {
     const tasksForDay = getTasksForDate(currentDate);
-    const isToday = currentDate.toDateString() === new Date().toDateString();
+    const isToday = isSameDay(currentDate, new Date());
 
     if (tasksForDay.length === 0) {
       return (
